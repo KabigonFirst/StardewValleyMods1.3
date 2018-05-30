@@ -1,0 +1,10 @@
+﻿{
+   "Name": "MineAssist",
+   "Author": "Kabigon",
+   "Version": "1.0.0",
+   "Description": "Assists for mining",
+   "UniqueID": "Kabigon.MineAssist",
+   "EntryDll": "MineAssist.dll",
+   "MinimumApiVersion": "2.0",
+   "UpdateKeys": []
+}
