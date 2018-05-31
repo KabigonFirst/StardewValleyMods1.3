@@ -1,10 +1,10 @@
 ﻿{
    "Name": "MineAssist",
    "Author": "Kabigon",
-   "Version": "1.0.0",
+   "Version": "1.0.0-beta",
    "Description": "Assists for mining",
    "UniqueID": "Kabigon.MineAssist",
    "EntryDll": "MineAssist.dll",
    "MinimumApiVersion": "2.0",
-   "UpdateKeys": []
+   "UpdateKeys": ["Chucklefish:5352", "GitHub:KabigonFirst/StardewValleyMods"]
 }
