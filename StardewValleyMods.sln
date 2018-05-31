@@ -27,8 +27,8 @@ Global
 		{32509588-155D-4417-805C-E9C4569FB289}.Debug|x86.Build.0 = Debug|Any CPU
 		{32509588-155D-4417-805C-E9C4569FB289}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{32509588-155D-4417-805C-E9C4569FB289}.Release|Any CPU.Build.0 = Release|Any CPU
-		{32509588-155D-4417-805C-E9C4569FB289}.Release|x86.ActiveCfg = Release|Any CPU
-		{32509588-155D-4417-805C-E9C4569FB289}.Release|x86.Build.0 = Release|Any CPU
+		{32509588-155D-4417-805C-E9C4569FB289}.Release|x86.ActiveCfg = Release|x86
+		{32509588-155D-4417-805C-E9C4569FB289}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
