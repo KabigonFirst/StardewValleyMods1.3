@@ -13,6 +13,7 @@ using SObject = StardewValley.Object;
 namespace CampfireCooking {
     public class ModEntry : Mod {
         private bool m_isMenuOn = false;
+        private Config.ModConfig m_config;
 
         /*********
         ** Public methods
@@ -20,6 +21,16 @@ namespace CampfireCooking {
         /// <summary>The mod entry point, called after the mod is first loaded.</summary>
         /// <param name="helper">Provides simplified APIs for writing mods.</param>
         public override void Entry(IModHelper helper) {
+            m_config = helper.ReadConfig<Config.ModConfig>();
+            //check if m_config is correct
+            if(m_config == null) {
+                this.Monitor.Log("Read configure file error.", LogLevel.Error);
+                return;
+            }
+            if(!m_config.isEnable) {
+                return;
+            }
+
             InputEvents.ButtonReleased += inputEvents_ButtonReleased;
             MenuEvents.MenuClosed += menuEvents_MenuClosed;
         }
@@ -78,10 +89,20 @@ namespace CampfireCooking {
             }
             if(Game1.player.currentLocation.objects.ContainsKey(placePos)) {
                 SObject  ret =  Game1.player.currentLocation.objects[placePos];
-                if(ret != null && ret.Name == "Campfire") {
+                if(ret != null && m_config.cookableItemNames.Contains(ret.Name)) {
                     return ret;
                 }
             }
+#if !DEBUG
+            else if (Game1.player.currentLocation is StardewValley.Locations.DecoratableLocation dl) {
+                foreach (SObject @object in dl.furniture) {
+                    if(m_config.cookableItemNames.Contains(@object.Name)) {
+                        if(@object.boundingBox.Value.Contains((int)placePos.X*64+32, (int)placePos.Y*64+32))
+                            return @object;
+                    }
+                }
+            }
+#endif
             return null;
         }
     }
