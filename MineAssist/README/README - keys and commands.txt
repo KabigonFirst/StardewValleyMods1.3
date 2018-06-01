@@ -1,5 +1,5 @@
 Command and paramters:
-    UseItem: Directly use tool/weapon/items on toolbar. For tools, pickaxe, axe, scythe works well. Watering can, hoe could only  affect one tile. Rod could not control its power. For weapons, sword works well but slingshot is somewhat complicated. For items, edible items and placeable items works well, others are not tested.
+    UseItem: Directly use tool/weapon/items on toolbar. Tools, except fishing rod all works well. For weapons, sword works well but slingshot is somewhat complicated. Edible items and placeable items(including totem) work well, others are not tested.
         Position: Required parameter. Since number of visible items is 12, it should be 1~12. However, it's possible to set as 13~36. Not recommended though.
         IsContinuous: Optional parameter. Some items can be used continuously while holding the action key (pickaxe, axe, scythe, edible items). By default, it's false.
     Craft: Craft items

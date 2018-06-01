@@ -1,4 +1,4 @@
-This mod is intend to add quick key bindings to assist mining. But as a general key binding mod, you can also use it in other situations.
+This mod intend to add quick key bindings to assist mining. But as a general key binding mod, you can also use it in other situations.
 
 Deleting config.json, fish.json will make the mod regenerate the missing files with default values. This is useful when updating the mod.
 Feel free to modify config.json all you'd like. The format is as follows:
