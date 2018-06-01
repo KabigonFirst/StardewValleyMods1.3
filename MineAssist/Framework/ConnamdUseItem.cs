@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using StardewValley;
+using Microsoft.Xna.Framework;
 
 namespace MineAssist.Framework {
     class ConnamdUseItem : Command {
@@ -13,31 +14,34 @@ namespace MineAssist.Framework {
             Position
         }
         private int position;
+        DateTime gt;
 
         public override void exec(Dictionary<string, string> par) {
-            if (par.ContainsKey(Paramter.IsContinuous.ToString())) {
+            if(par.ContainsKey(Paramter.IsContinuous.ToString())) {
                 isContinuous = par[Paramter.IsContinuous.ToString()].Equals("true", StringComparison.OrdinalIgnoreCase);
             }
-            if (par.ContainsKey(Paramter.Position.ToString())) {
+            if(par.ContainsKey(Paramter.Position.ToString())) {
                 position = Convert.ToInt32(par[Paramter.Position.ToString()]) - 1;
             } else {
                 position = Game1.player.CurrentToolIndex;
             }
             StardewWrap.fastUse(position);
+            if(StardewWrap.isCurrentToolChargable()) {
+                gt = DateTime.Now;
+            }
         }
 
         public override void update() {
-            if (!isContinuous || StardewWrap.isPlayerBusy()) {
+            if (!isContinuous) {
                 return;
             }
-            StardewWrap.fastUse(position);
+            int ms = (DateTime.Now - gt).Milliseconds;
+            gt = DateTime.Now;
+            StardewWrap.updateUse(ms);
         }
 
         public override void end() {
-            Item t = Game1.player.Items[position];
-            if (t is Tool tool && Game1.player.canReleaseTool) {
-                Game1.player.EndUsingTool();
-            }
+            StardewWrap.endUse();
         }
     }
 }

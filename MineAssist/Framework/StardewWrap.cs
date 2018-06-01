@@ -1,6 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.Tools;
 using SObject = StardewValley.Object;
 
 namespace MineAssist.Framework {
@@ -79,13 +81,23 @@ namespace MineAssist.Framework {
             }
             Game1.player.CurrentToolIndex = itemIndex;
             if (t is Tool) {
+                //shake player to warn low Stamina
+                if((double)Game1.player.Stamina <= 20.0 && !(t is MeleeWeapon)) {
+                    shakePlayer();
+                }
+                //reset tool power when begin using the tool
+                if(Game1.player.toolPower > 0) {
+                    Game1.player.toolPower = 0;
+                }
                 Game1.player.BeginUsingTool();
             } else if (t is SObject so) {
-                if (so.Edibility > 0) {
+                if(so.Edibility > 0) {
                     Game1.player.eatObject(so);
-                    if (--t.Stack == 0) {
+                    if(--t.Stack == 0) {
                         Game1.player.removeItemFromInventory(t);
                     }
+                } else if (so.Name.Contains("Totem")){
+                    so.performUseAction(Game1.player.currentLocation);
                 } else if (so.isPlaceable()) {
                     //calculate place position based on player position and facing direction
                     Vector2 placePos = Game1.player.getTileLocation();
@@ -98,6 +110,74 @@ namespace MineAssist.Framework {
                     //Game1.showGlobalMessage($"POS:{(int)placePos.X}, {(int)placePos.Y}");
                     Utility.tryToPlaceItem(Game1.currentLocation, so, (int)placePos.X * 64 + 32, (int)placePos.Y * 64 + 32);
                 }
+            }
+        }
+
+        public static void updateUse(int time) {
+            if(isCurrentToolChargable()) {
+                if((double)Game1.player.Stamina < 1.0) {
+                    return;
+                }
+                if(Game1.player.toolHold <= 0 && canIncreaseToolPower()) {
+                    Game1.player.toolHold = 600;
+                } else if(canIncreaseToolPower()) {
+                    Game1.player.toolHold -= time;
+                    if(Game1.player.toolHold <= 0)
+                        Game1.player.toolPowerIncrease();
+                }
+            } else if (!isPlayerBusy() && canCurrentItemContiniouslyUse()) {
+                fastUse(Game1.player.CurrentToolIndex);
+            }
+        }
+
+        public static void endUse() {
+            Item t = Game1.player.Items[Game1.player.CurrentToolIndex];
+            if(t is Tool tool && Game1.player.canReleaseTool) {
+                Game1.player.EndUsingTool();
+            }
+        }
+
+        public static bool canCurrentItemContiniouslyUse() {
+            Tool t = Game1.player.CurrentTool;
+            if(t == null) {
+                return false;
+            }
+            if(t is MilkPail || t is Shears || t is Pan || t is FishingRod) {
+                return false;
+            }
+            return true;
+        }
+
+        public static bool isCurrentToolChargable() {
+            Tool t = Game1.player.CurrentTool;
+            if (t == null) {
+                return false;
+            }
+            if (t is Hoe ||t is WateringCan) {
+                return true;
+            }
+            return false;
+        }
+
+        public static bool canIncreaseToolPower() {
+#if DEBUG
+            return ((int)(Game1.player.CurrentTool.UpgradeLevel) > Game1.player.toolPower);
+#endif
+#if !DEBUG
+            return ((int)(Game1.player.CurrentTool.upgradeLevel) > Game1.player.toolPower);
+#endif
+        }
+
+        public static void shakePlayer() {
+            Game1.staminaShakeTimer = 1000;
+            for(int index = 0; index < 4; ++index) {
+                Game1.screenOverlayTempSprites.Add(new TemporaryAnimatedSprite("LooseSprites\\Cursors", new Microsoft.Xna.Framework.Rectangle(366, 412, 5, 6), new Vector2((float)(Game1.random.Next(32) + Game1.viewport.Width - 56), (float)(Game1.viewport.Height - 224 - 16 - (int)((double)(Game1.player.MaxStamina - 270) * 0.715))), false, 0.012f, Color.SkyBlue) {
+                    motion = new Vector2(-2f, -10f),
+                    acceleration = new Vector2(0.0f, 0.5f),
+                    local = true,
+                    scale = (float)(4 + Game1.random.Next(-1, 0)),
+                    delayBeforeAnimationStart = index * 30
+                });
             }
         }
 
