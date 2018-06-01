@@ -6,5 +6,5 @@
    "UniqueID": "Kabigon.MineAssist",
    "EntryDll": "MineAssist.dll",
    "MinimumApiVersion": "2.0",
-   "UpdateKeys": ["Chucklefish:5353", "GitHub:KabigonFirst/StardewValleyMods"]
+   "UpdateKeys": ["Nexus:2296", "Chucklefish:5353", "GitHub:KabigonFirst/StardewValleyMods"]
 }
