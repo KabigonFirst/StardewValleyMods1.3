@@ -31,18 +31,18 @@ namespace MineAssist.Config {
                         { CommandCraft.Paramter.ToPosition.ToString(), "3" }
                     }),
                     new CmdCfg(SButton.None, SButton.LeftShoulder, ConnamdUseItem.name, new Dictionary<string, string>{
-                        { ConnamdUseItem.Paramter.Position.ToString() , "1" },
+                        { ConnamdUseItem.Paramter.ItemName.ToString() , "PickAxe" },
                         { ConnamdUseItem.Paramter.IsContinuous.ToString() , "true" }
                     }),
                     new CmdCfg(SButton.None, SButton.RightShoulder, ConnamdUseItem.name, new Dictionary<string, string>{
-                        { ConnamdUseItem.Paramter.Position.ToString() , "2" },
+                        { ConnamdUseItem.Paramter.ItemName.ToString() , "Weapon" },
                         { ConnamdUseItem.Paramter.IsContinuous.ToString() , "true" }
                     }),
                     new CmdCfg(SButton.None, SButton.RightStick, ConnamdUseItem.name, new Dictionary<string, string>{
-                        { ConnamdUseItem.Paramter.Position.ToString() , "3" }
+                        { ConnamdUseItem.Paramter.ItemName.ToString() , "Staircase" }
                     }),
                     new CmdCfg(SButton.None, SButton.LeftStick, ConnamdUseItem.name, new Dictionary<string, string>{
-                        { ConnamdUseItem.Paramter.Position.ToString() , "12" }
+                        { ConnamdUseItem.Paramter.ItemName.ToString() , "Edible" }
                     })
                 }
             )}

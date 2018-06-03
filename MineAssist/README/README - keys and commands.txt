@@ -1,6 +1,6 @@
 Command and paramters:
     UseItem: Directly use tool/weapon/items on toolbar. Tools, except fishing rod all works well. For weapons, sword works well but slingshot is somewhat complicated. Edible items and placeable items(including totem) work well, others are not tested.
-        Position: Required parameter. Since number of visible items is 12, it should be 1~12. However, it's possible to set as 13~36. Not recommended though.
+        ItemName/Position: Required parameter. Indicate which item to use. Either by position or item name. If both are provided, Position will override ItemName. Since number of visible items is 12, the range of Posisiotn parameter should be 1~12. However, it's possible to set as 13~36. ItemName could be actual item name or "Weapon" to indicate any short weapon (not including slingshot or Scythe) or "Edible" to indicate any Edible items or basic tool name like "PickAxe" instead of "Copper PickAxe". If more than one item matches, the first one will be used.
         IsContinuous: Optional parameter. Some items can be used continuously while holding the action key (pickaxe, axe, scythe, edible items). By default, it's false.
     Craft: Craft items
         ItemName: Required parameter.

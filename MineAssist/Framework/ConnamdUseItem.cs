@@ -11,9 +11,11 @@ namespace MineAssist.Framework {
         public static string name = "UseItem";
         public new enum Paramter {
             IsContinuous,
-            Position
+            Position,
+            ItemName
         }
-        private int position;
+        private int m_position = -1;
+        private string m_itemName = null;
         DateTime gt;
 
         public override void exec(Dictionary<string, string> par) {
@@ -21,11 +23,18 @@ namespace MineAssist.Framework {
                 isContinuous = par[Paramter.IsContinuous.ToString()].Equals("true", StringComparison.OrdinalIgnoreCase);
             }
             if(par.ContainsKey(Paramter.Position.ToString())) {
-                position = Convert.ToInt32(par[Paramter.Position.ToString()]) - 1;
+                m_position = Convert.ToInt32(par[Paramter.Position.ToString()]) - 1;
+            } else if(par.ContainsKey(Paramter.ItemName.ToString())) {
+                m_itemName = par[Paramter.ItemName.ToString()];
             } else {
-                position = Game1.player.CurrentToolIndex;
+                m_position = Game1.player.CurrentToolIndex;
             }
-            StardewWrap.fastUse(position);
+
+            if(m_itemName == null) {
+                StardewWrap.fastUse(m_position);
+            } else {
+                StardewWrap.fastUse(ref m_itemName);
+            }
             if(StardewWrap.isCurrentToolChargable()) {
                 gt = DateTime.Now;
             }
@@ -37,7 +46,11 @@ namespace MineAssist.Framework {
             }
             int ms = (DateTime.Now - gt).Milliseconds;
             gt = DateTime.Now;
-            StardewWrap.updateUse(ms);
+            if(m_itemName == null) {
+                StardewWrap.updateUse(ms);
+            } else {
+                StardewWrap.updateUse(ms, ref m_itemName);
+            }
         }
 
         public override void end() {

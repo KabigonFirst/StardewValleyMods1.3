@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
 using StardewValley;
@@ -71,6 +72,57 @@ namespace MineAssist.Framework {
             Game1.player.addItemByMenuIfNecessary(craftedItem);
         }
 
+        public static Vector2 getStaminaHealthFromObject(ref SObject so) {
+            Vector2 ret = new Vector2();
+            int num = (int)Math.Ceiling((double)so.Edibility * 2.5) + (int)(so.Quality) * so.Edibility;
+            ret.X = num;
+            ret.Y = so.Edibility < 0 ? 0 : (int)((double)num * 0.45);
+            return ret;
+        }
+
+        public static bool isItemTheName(ref string itemName, int i) {
+            Item @t = Game1.player.Items[i];
+            if(t == null) {
+                return false;
+            }
+            if ("Edible".Equals(itemName, System.StringComparison.CurrentCultureIgnoreCase)) {
+                if (t is SObject so && so.Edibility > 0) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            if ("Weapon".Equals(itemName, System.StringComparison.CurrentCultureIgnoreCase)) {
+                if(@t is MeleeWeapon && !"Scythe".Equals(t.Name)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            if(@t.Name.Equals(itemName, System.StringComparison.CurrentCultureIgnoreCase)) {
+                return true;
+            }
+            if(t is Tool tool && tool.BaseName.Equals(itemName, System.StringComparison.CurrentCultureIgnoreCase)) {
+                return true;
+            }
+            return false;
+        }
+
+        public static int findItemByName(ref string itemName) {
+            for(int i = 0; i < Game1.player.MaxItems; ++i) {
+                if(isItemTheName(ref itemName, i)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        public static void fastUse(ref string itemName) {
+            int i = findItemByName(ref itemName);
+            if(i >= 0) {
+                fastUse(i);
+            }
+        }
         /// <summary>Directly use item(tool/weapon/foods/placealbe) quickly.</summary>
         /// <param name="itemIndex">The index of item that intend to use.</param>
         public static void fastUse(int itemIndex) {
@@ -110,6 +162,17 @@ namespace MineAssist.Framework {
                     //Game1.showGlobalMessage($"POS:{(int)placePos.X}, {(int)placePos.Y}");
                     Utility.tryToPlaceItem(Game1.currentLocation, so, (int)placePos.X * 64 + 32, (int)placePos.Y * 64 + 32);
                 }
+            }
+        }
+
+        public static void updateUse(int time, ref string itemName) {
+            int position = Game1.player.CurrentToolIndex;
+            if (!isItemTheName(ref itemName, position)) {
+                position = findItemByName(ref itemName);
+            }
+            if(position >= 0) {
+                Game1.player.CurrentToolIndex = position;
+                updateUse(time);
             }
         }
 

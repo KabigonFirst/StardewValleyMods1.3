@@ -1,6 +1,6 @@
 This mod intend to add quick key bindings to assist mining. But as a general key binding mod, you can also use it in other situations.
 
-Deleting config.json, fish.json will make the mod regenerate the missing files with default values. This is useful when updating the mod.
+Deleting config.json will make the mod regenerate the missing files with default values. This is useful when updating the mod.
 Feel free to modify config.json all you'd like. The format is as follows:
 
  - isEnable: Whether the mod should actually do anything but load the configs. You can set this to false rather than delete the mod if you're trying to find mod conflicts.

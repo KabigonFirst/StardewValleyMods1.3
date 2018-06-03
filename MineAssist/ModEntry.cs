@@ -121,7 +121,7 @@ namespace MineAssist {
                 if (m_modify == e.Button) {
                     m_modify = SButton.None;
                 }
-                if (e.Button == m_cmdcfg.modifyKey) {
+                if (m_cmdcfg!= null && e.Button == m_cmdcfg.modifyKey) {
                     stopCmd();
                 }
                 e.SuppressButton();
