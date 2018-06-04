@@ -72,6 +72,267 @@ namespace MineAssist.Framework {
             Game1.player.addItemByMenuIfNecessary(craftedItem);
         }
 
+        public enum UseCondition {
+            StaminaAtLeast,
+            StaminaAtMost,
+            HealthAtLeast,
+            HealthAtMost,
+            QualityAtLeast,
+            QualityAtMost,
+            PriceAtLeast,
+            PriceAtMost,
+            NumberCompare
+        }
+
+        public static bool satisfyCondition(ref Item item, ref string[] condition) {
+            bool not = false;
+            int cmdi = 0;
+            if (condition.Length<2) {
+                return true;
+            }
+
+            if (condition.Length > 2) {
+                if ("not".Equals(condition[0].ToLower())) {
+                    not = true;
+                    ++cmdi;
+                }
+            }
+
+            UseCondition con;
+            if (!Enum.TryParse<UseCondition>(condition[cmdi], true, out con)) {
+                return not ^ false;
+            }
+            ++cmdi;
+
+            bool isobj = false;
+            SObject so = null; 
+            if (item is SObject) {
+                so = (SObject)item;
+                isobj = true;
+            }
+            double cmpVar = 0;
+            bool cmpLarger = true;
+            switch (con) {
+                case UseCondition.StaminaAtLeast:
+                    if (isobj) {
+                        cmpLarger = true;
+                        cmpVar = getStaminaHealthFromObject(ref so).X;
+                    } else {
+                        return not ^ false;
+                    }
+                    goto case UseCondition.NumberCompare;
+                case UseCondition.StaminaAtMost:
+                    if (isobj) {
+                        cmpLarger = false;
+                        cmpVar = getStaminaHealthFromObject(ref so).X;
+                    } else {
+                        return not ^ false;
+                    }
+                    goto case UseCondition.NumberCompare;
+                case UseCondition.HealthAtLeast:
+                    if (isobj) {
+                        cmpLarger = true;
+                        cmpVar = getStaminaHealthFromObject(ref so).Y;
+                    } else {
+                        return not ^ false;
+                    }
+                    goto case UseCondition.NumberCompare;
+                case UseCondition.HealthAtMost:
+                    if (isobj) {
+                        cmpLarger = false;
+                        cmpVar = getStaminaHealthFromObject(ref so).X;
+                    } else {
+                        return not ^ false;
+                    }
+                    goto case UseCondition.NumberCompare;
+                case UseCondition.QualityAtLeast:
+                    cmpLarger = true;
+                    if (isobj) {
+                        cmpVar = so.Quality;
+                    } else if (item is Tool) {
+                        cmpVar = ((Tool)item).UpgradeLevel;
+                    } else {
+                        return not ^ false;
+                    }
+                    goto case UseCondition.NumberCompare;
+                case UseCondition.QualityAtMost:
+                    cmpLarger = true;
+                    if (isobj) {
+                        cmpVar = so.Quality;
+                    } else if (item is Tool) {
+                        cmpVar = ((Tool)item).UpgradeLevel;
+                    } else {
+                        return not ^ false;
+                    }
+                    goto case UseCondition.NumberCompare;
+                case UseCondition.PriceAtLeast:
+                    cmpLarger = true;
+                    cmpVar = item.salePrice();
+                    goto case UseCondition.NumberCompare;
+                case UseCondition.PriceAtMost:
+                    cmpLarger = false;
+                    cmpVar = item.salePrice();
+                    goto case UseCondition.NumberCompare;
+                case UseCondition.NumberCompare:
+                    double par = Convert.ToDouble(condition[cmdi]);
+                    if (cmpLarger) {
+                        return not ^ (cmpVar >= par);
+                    } else {
+                        return not ^ (cmpVar <= par);
+                    }
+            }
+            return not ^ false;
+        }
+
+        public enum UseOrder {
+            StaminaLowest,
+            StaminaHighest,
+            HelthLowest,
+            HealthHighest,
+            QualityLowest,
+            QualityHighest,
+            PriceLowest,
+            PriceHighest
+        }
+
+        public static int itemChallengeByOrder(ref Item baseItem, ref Item challengeItem, string order) {
+            if (baseItem == null) {
+                return 1;
+            }
+
+            UseOrder con;
+            if (!Enum.TryParse<UseOrder>(order, true, out con)) {
+                return -1;
+            }
+
+            bool isobj = false;
+            SObject bi = null, ci = null;
+            if (baseItem is SObject) {
+                bi = (SObject)baseItem;
+                isobj = true;
+            }
+            if (challengeItem is SObject) {
+                ci = (SObject)challengeItem;
+                isobj = isobj & true;
+            }
+            double bv = 0, cv = 0;
+
+            switch (con) {
+                case UseOrder.StaminaLowest:
+                    if (isobj) {
+                        cv = getStaminaHealthFromObject(ref ci).X;
+                        bv = getStaminaHealthFromObject(ref bi).X;
+                        if (cv < bv) {
+                            return 1;
+                        } else if (cv == bv) {
+                            return 0;
+                        } else {
+                            return -1;
+                        }
+                    } else {
+                        return -2;
+                    }
+                case UseOrder.StaminaHighest:
+                    if (isobj) {
+                        cv = getStaminaHealthFromObject(ref ci).X;
+                        bv = getStaminaHealthFromObject(ref bi).X;
+                        if (cv > bv) {
+                            return 1;
+                        } else if (cv == bv) {
+                            return 0;
+                        } else {
+                            return -1;
+                        }
+                    } else {
+                        return -2;
+                    }
+                case UseOrder.HelthLowest:
+                    if (isobj) {
+                        cv = getStaminaHealthFromObject(ref ci).Y;
+                        bv = getStaminaHealthFromObject(ref bi).Y;
+                        if (cv < bv) {
+                            return 1;
+                        } else if (cv == bv) {
+                            return 0;
+                        } else {
+                            return -1;
+                        }
+                    } else {
+                        return -2;
+                    }
+                case UseOrder.HealthHighest:
+                    if (isobj) {
+                        cv = getStaminaHealthFromObject(ref ci).Y;
+                        bv = getStaminaHealthFromObject(ref bi).Y;
+                        if (cv > bv) {
+                            return 1;
+                        } else if (cv == bv) {
+                            return 0;
+                        } else {
+                            return -1;
+                        }
+                    } else {
+                        return -2;
+                    }
+                case UseOrder.QualityLowest:
+                    if (isobj) {
+                        cv = ci.Quality;
+                        bv = bi.Quality;
+                    } else if (challengeItem is Tool && baseItem is Tool) {
+                        cv = ((Tool)challengeItem).UpgradeLevel;
+                        bv = ((Tool)baseItem).UpgradeLevel;
+                    } else {
+                        return -2;
+                    }
+                    if (cv < bv) {
+                        return 1;
+                    } else if (cv == bv) {
+                        return 0;
+                    } else {
+                        return -1;
+                    }
+                case UseOrder.QualityHighest:
+                    if (isobj) {
+                        cv = ci.Quality;
+                        bv = bi.Quality;
+                    } else if (challengeItem is Tool && baseItem is Tool) {
+                        cv = ((Tool)challengeItem).UpgradeLevel;
+                        bv = ((Tool)baseItem).UpgradeLevel;
+                    } else {
+                        return -2;
+                    }
+                    if (cv > bv) {
+                        return 1;
+                    } else if (cv == bv) {
+                        return 0;
+                    } else {
+                        return -1;
+                    }
+                case UseOrder.PriceLowest:
+                    bv = baseItem.salePrice();
+                    cv = challengeItem.salePrice();
+                    if (cv < bv) {
+                        return 1;
+                    } else if (cv == bv) {
+                        return 0;
+                    } else {
+                        return -1;
+                    }
+                case UseOrder.PriceHighest:
+                    bv = baseItem.salePrice();
+                    cv = challengeItem.salePrice();
+                    if (cv > bv) {
+                        return 1;
+                    } else if (cv == bv) {
+                        return 0;
+                    } else {
+                        return -1;
+                    }
+            }
+
+            return -2;
+        }
+
         public static Vector2 getStaminaHealthFromObject(ref SObject so) {
             Vector2 ret = new Vector2();
             int num = (int)Math.Ceiling((double)so.Edibility * 2.5) + (int)(so.Quality) * so.Edibility;
@@ -81,7 +342,7 @@ namespace MineAssist.Framework {
         }
 
         public static bool isItemTheName(ref string itemName, int i) {
-            Item @t = Game1.player.Items[i];
+            Item t = Game1.player.Items[i];
             if(t == null) {
                 return false;
             }
@@ -93,13 +354,13 @@ namespace MineAssist.Framework {
                 }
             }
             if ("Weapon".Equals(itemName, System.StringComparison.CurrentCultureIgnoreCase)) {
-                if(@t is MeleeWeapon && !"Scythe".Equals(t.Name)) {
+                if(t is MeleeWeapon && !"Scythe".Equals(t.Name)) {
                     return true;
                 } else {
                     return false;
                 }
             }
-            if(@t.Name.Equals(itemName, System.StringComparison.CurrentCultureIgnoreCase)) {
+            if(t.Name.Equals(itemName, System.StringComparison.CurrentCultureIgnoreCase)) {
                 return true;
             }
             if(t is Tool tool && tool.BaseName.Equals(itemName, System.StringComparison.CurrentCultureIgnoreCase)) {
@@ -108,8 +369,8 @@ namespace MineAssist.Framework {
             return false;
         }
 
-        public static int findItemByName(ref string itemName) {
-            for(int i = 0; i < Game1.player.MaxItems; ++i) {
+        public static int findItemByName(ref string itemName, int startIndex = 0) {
+            for(int i = startIndex; i < Game1.player.MaxItems; ++i) {
                 if(isItemTheName(ref itemName, i)) {
                     return i;
                 }
@@ -117,9 +378,36 @@ namespace MineAssist.Framework {
             return -1;
         }
 
-        public static void fastUse(ref string itemName) {
-            int i = findItemByName(ref itemName);
-            if(i >= 0) {
+        public static int findItem(ref string itemName, ref string condition, ref string order) {
+            int i = -1;
+            string[] cons = null;
+            if (condition != null) {
+                cons = condition.Split(' ');
+            }
+            Item it = null;
+            for (int curi = 0; curi >= 0; ++curi) {
+                curi = findItemByName(ref itemName, curi);
+                if (curi < 0) {
+                    break;
+                }
+                Item cur = Game1.player.Items[curi];
+                if (condition != null && !satisfyCondition(ref cur, ref cons)) {
+                    continue;
+                }
+                if (order == null && it != null) {
+                    return i;
+                }
+                if (itemChallengeByOrder(ref it, ref cur, order) > 0) {
+                    it = cur;
+                    i = curi;
+                }
+            }
+            return i;
+        }
+
+        public static void fastUse(ref string itemName, ref string condition, ref string order) {
+            int i = findItem(ref itemName, ref condition, ref order);
+            if (i >= 0) {
                 fastUse(i);
             }
         }
@@ -165,11 +453,8 @@ namespace MineAssist.Framework {
             }
         }
 
-        public static void updateUse(int time, ref string itemName) {
-            int position = Game1.player.CurrentToolIndex;
-            if (!isItemTheName(ref itemName, position)) {
-                position = findItemByName(ref itemName);
-            }
+        public static void updateUse(int time, ref string itemName, ref string condition, ref string order) {
+            int position = findItem(ref itemName, ref condition, ref order);
             if(position >= 0) {
                 Game1.player.CurrentToolIndex = position;
                 updateUse(time);

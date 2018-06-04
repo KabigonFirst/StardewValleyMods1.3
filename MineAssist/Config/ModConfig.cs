@@ -42,7 +42,9 @@ namespace MineAssist.Config {
                         { ConnamdUseItem.Paramter.ItemName.ToString() , "Staircase" }
                     }),
                     new CmdCfg(SButton.None, SButton.LeftStick, ConnamdUseItem.name, new Dictionary<string, string>{
-                        { ConnamdUseItem.Paramter.ItemName.ToString() , "Edible" }
+                        { ConnamdUseItem.Paramter.ItemName.ToString() , "Edible" },
+                        { ConnamdUseItem.Paramter.Condition.ToString() , StardewWrap.UseCondition.HealthAtLeast.ToString() + " 30" },
+                        { ConnamdUseItem.Paramter.Order.ToString() , StardewWrap.UseOrder.PriceLowest.ToString()}
                     })
                 }
             )}
