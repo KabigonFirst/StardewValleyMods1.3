@@ -11,11 +11,15 @@ namespace MineAssist.Config {
         public bool isEnable = true;
         public Dictionary<string, ModeCfg> modes { get; set; } = new Dictionary<string, ModeCfg> {
             { "Default", new ModeCfg(
-                new HashSet<SButton>(),
+                new HashSet<SButton> {
+                    SButton.ControllerBack
+                },
                 new List<CmdCfg>{
-                    new CmdCfg(SButton.None, SButton.ControllerStart, CommandSwitchMode.name, new Dictionary<string, string>{
+                    new CmdCfg(SButton.ControllerBack, SButton.ControllerA, CommandSwitchMode.name, new Dictionary<string, string>{
                         { CommandSwitchMode.Paramter.ModeName.ToString(), "Mining" }
-                    })
+                    }),
+                    new CmdCfg(SButton.None, SButton.ControllerStart, CommandOpenMenu.name, new Dictionary<string, string>()),
+                    new CmdCfg(SButton.ControllerBack, SButton.ControllerStart, CommandPause.name, new Dictionary<string, string>())
                 }
             )},
             { "Mining", new ModeCfg(
@@ -36,15 +40,19 @@ namespace MineAssist.Config {
                     }),
                     new CmdCfg(SButton.None, SButton.RightShoulder, ConnamdUseItem.name, new Dictionary<string, string>{
                         { ConnamdUseItem.Paramter.ItemName.ToString() , "Weapon" },
-                        { ConnamdUseItem.Paramter.IsContinuous.ToString() , "true" }
+                        { ConnamdUseItem.Paramter.IsContinuous.ToString() , "true" },
+                        { ConnamdUseItem.Paramter.Order.ToString() , StardewWrap.UseOrder.QualityHighest.ToString()}
                     }),
                     new CmdCfg(SButton.None, SButton.RightStick, ConnamdUseItem.name, new Dictionary<string, string>{
                         { ConnamdUseItem.Paramter.ItemName.ToString() , "Staircase" }
                     }),
-                    new CmdCfg(SButton.None, SButton.LeftStick, ConnamdUseItem.name, new Dictionary<string, string>{
+                    new CmdCfg(SButton.ControllerBack, SButton.LeftStick, ConnamdUseItem.name, new Dictionary<string, string>{
                         { ConnamdUseItem.Paramter.ItemName.ToString() , "Edible" },
-                        { ConnamdUseItem.Paramter.Condition.ToString() , StardewWrap.UseCondition.HealthAtLeast.ToString() + " 30" },
+                        { ConnamdUseItem.Paramter.Condition.ToString() , StardewWrap.UseCondition.HealthAtMost.ToString() + " 30" },
                         { ConnamdUseItem.Paramter.Order.ToString() , StardewWrap.UseOrder.PriceLowest.ToString()}
+                    }),
+                    new CmdCfg(SButton.None, SButton.LeftStick, ConnamdUseItem.name, new Dictionary<string, string>{
+                        { ConnamdUseItem.Paramter.Position.ToString() , "12" }
                     })
                 }
             )}

@@ -4,10 +4,32 @@ using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Tools;
+using StardewValley.Menus;
 using SObject = StardewValley.Object;
 
 namespace MineAssist.Framework {
     class StardewWrap {
+
+        public static void pause() {
+            if (!Game1.IsMasterGame) {
+                Game1.chatBox.addErrorMessage(Game1.content.LoadString("Strings\\UI:Chat_HostOnlyCommand"));
+                return;
+            }
+#if !DEBUG
+            Game1.netWorldState.Value.IsPaused = !Game1.netWorldState.Value.IsPaused;
+            /*
+            if (Game1.netWorldState.Value.IsPaused) {
+                Game1.chatBox.addInfoMessage("Paused");
+                return;
+            }
+            Game1.chatBox.addInfoMessage("Resumed");
+            //*/
+#endif
+        }
+        public static void openJournalMenu() {
+            Game1.activeClickableMenu = (IClickableMenu)new QuestLog();
+        }
+
         /// <summary>Craft item(Staircase) quickly.</summary>
         /// <param name="itemName">item to craft.</param>
         /// <param name="toPosition">position to put crafted item or -1 to be default.</param>
@@ -83,7 +105,6 @@ namespace MineAssist.Framework {
             PriceAtMost,
             NumberCompare
         }
-
         public static bool satisfyCondition(ref Item item, ref string[] condition) {
             bool not = false;
             int cmdi = 0;
@@ -149,6 +170,8 @@ namespace MineAssist.Framework {
                     cmpLarger = true;
                     if (isobj) {
                         cmpVar = so.Quality;
+                    } else if (item is MeleeWeapon) {
+                        cmpVar = ((MeleeWeapon)item).getItemLevel();
                     } else if (item is Tool) {
                         cmpVar = ((Tool)item).UpgradeLevel;
                     } else {
@@ -159,6 +182,8 @@ namespace MineAssist.Framework {
                     cmpLarger = true;
                     if (isobj) {
                         cmpVar = so.Quality;
+                    } else if (item is MeleeWeapon) {
+                        cmpVar = ((MeleeWeapon)item).getItemLevel();
                     } else if (item is Tool) {
                         cmpVar = ((Tool)item).UpgradeLevel;
                     } else {
@@ -194,7 +219,6 @@ namespace MineAssist.Framework {
             PriceLowest,
             PriceHighest
         }
-
         public static int itemChallengeByOrder(ref Item baseItem, ref Item challengeItem, string order) {
             if (baseItem == null) {
                 return 1;
@@ -278,6 +302,9 @@ namespace MineAssist.Framework {
                     if (isobj) {
                         cv = ci.Quality;
                         bv = bi.Quality;
+                    } else if (challengeItem is MeleeWeapon && baseItem is MeleeWeapon) {
+                        cv = ((MeleeWeapon)challengeItem).getItemLevel();
+                        bv = ((MeleeWeapon)baseItem).getItemLevel();
                     } else if (challengeItem is Tool && baseItem is Tool) {
                         cv = ((Tool)challengeItem).UpgradeLevel;
                         bv = ((Tool)baseItem).UpgradeLevel;
@@ -295,6 +322,9 @@ namespace MineAssist.Framework {
                     if (isobj) {
                         cv = ci.Quality;
                         bv = bi.Quality;
+                    } else if (challengeItem is MeleeWeapon && baseItem is MeleeWeapon) {
+                        cv = ((MeleeWeapon)challengeItem).getItemLevel();
+                        bv = ((MeleeWeapon)baseItem).getItemLevel();
                     } else if (challengeItem is Tool && baseItem is Tool) {
                         cv = ((Tool)challengeItem).UpgradeLevel;
                         bv = ((Tool)baseItem).UpgradeLevel;
@@ -538,12 +568,15 @@ namespace MineAssist.Framework {
         public static void setMove(SDirection m, bool isStart) {
             Game1.player.setMoving((byte)((isStart?0:32) + (1<<(byte)m)));
         }
+
         public static void inGameMessage(string msg) {
             Game1.showGlobalMessage(msg);
         }
+
         public static bool isPlayerReady() {
             return (Context.IsWorldReady && Context.IsPlayerFree);
         }
+
         /// <summary>Check if local player is busy with something.</summary>
         public static bool isPlayerBusy() {
             return(Game1.player.UsingTool || Game1.player.isEating);

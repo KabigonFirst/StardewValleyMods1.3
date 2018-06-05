@@ -18,6 +18,10 @@ namespace MineAssist.Framework {
                 return new CommandCraft();
             } else if (name.Equals(ConnamdUseItem.name)) {
                 return new ConnamdUseItem();
+            } else if (name.Equals(CommandOpenMenu.name)) {
+                return new CommandOpenMenu();
+            } else if (name.Equals(CommandPause.name)) {
+                return new CommandPause();
             }
             return null;
         }

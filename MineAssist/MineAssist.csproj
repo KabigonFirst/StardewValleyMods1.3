@@ -48,6 +48,8 @@
     <Compile Include="Config\ModConfig.cs" />
     <Compile Include="Framework\Command.cs" />
     <Compile Include="Framework\CommandCraft.cs" />
+    <Compile Include="Framework\CommandOpenMenu.cs" />
+    <Compile Include="Framework\CommandPause.cs" />
     <Compile Include="Framework\CommandSwitchMode.cs" />
     <Compile Include="Framework\ConnamdUseItem.cs" />
     <Compile Include="Framework\StardewWrap.cs" />
