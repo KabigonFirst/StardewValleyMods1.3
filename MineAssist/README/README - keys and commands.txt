@@ -1,4 +1,4 @@
-Command and paramters:
+Commands:
     UseItem: Directly use tool/weapon/items on toolbar. Tools, except fishing rod all works well. For weapons, sword works well but slingshot is somewhat complicated. Edible items and placeable items(including totem) work well, others are not tested.
         ItemName/Position: Required parameter. Indicate which item to use. Either by position or item name. If both are provided, Position will override ItemName. Since number of visible items is 12, the range of Posisiotn parameter should be 1~12. However, it's possible to set as 13~36. ItemName could be actual item name or "Weapon" to indicate any short weapon (not including slingshot or Scythe) or "Edible" to indicate any Edible items or basic tool name like "PickAxe" instead of "Copper PickAxe". If more than one item matches, the first one will be used.
         Condition:Optional parameter. If specify item by name, this parameter can add additional conditions to limit item selection. Possible values:
@@ -6,8 +6,8 @@ Command and paramters:
             "StaminaAtMost <Stamina>"
             "HealthAtLeast <Health>"
             "HealthAtMost <Health>"
-            "QualityAtLeast <Quality/UpgradeLevel>"
-            "QualityAtMost <Quality/UpgradeLevel>"
+            "QualityAtLeast <Quality/UpgradeLevel/WeaponLevel>"
+            "QualityAtMost <Quality/UpgradeLevel/WeaponLevel>"
             "PriceAtLeast <Price>"
             "PriceAtMost <Price>"
         Order:Optional parameter. For all items that satisfy Condition, indicate which one to use. Possible values:
@@ -25,6 +25,8 @@ Command and paramters:
         ToPosition: Optional parameter. If this parameter is set, the crafted item will placed to the fixed position if possible. If there is an item in that position, the item will be place to another empty slot.
     SwitchMod: Perform switch among modes.
         ModeName: Required parameter. Mode name to switch.
+    OpenMenu: Open Journal Menu
+    Pause: Pause the game, only host can do it.
 
 Both modifyKeys and keys can be one of these(whcih defined in SMAPI):
     None
