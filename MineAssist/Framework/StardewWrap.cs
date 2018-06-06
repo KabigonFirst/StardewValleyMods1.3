@@ -452,17 +452,6 @@ namespace MineAssist.Framework {
             }
         }
 
-        public static System.Reflection.BindingFlags Flags = System.Reflection.BindingFlags.Instance
-                                   | System.Reflection.BindingFlags.GetProperty
-                                   | System.Reflection.BindingFlags.SetProperty
-                                   | System.Reflection.BindingFlags.GetField
-                                   | System.Reflection.BindingFlags.SetField
-                                   | System.Reflection.BindingFlags.NonPublic;
-        public static System.Reflection.FieldInfo GetPrivateFieldInfo(Type type, string fieldName) {
-            var fields = type.GetFields(Flags);
-            return fields.FirstOrDefault(feildInfo => feildInfo.Name == fieldName);
-        }
-
         /// <summary>Directly use item(tool/weapon/foods/placealbe) quickly.</summary>
         /// <param name="itemIndex">The index of item that intend to use.</param>
         public static void fastUse(int itemIndex) {
@@ -549,6 +538,7 @@ namespace MineAssist.Framework {
                 //Game1.spriteBatch.End();
             }
         }
+
         public static void updateFishingRod(int time) {
             FishingRod fr = (FishingRod)Game1.player.CurrentTool;
             if (FishingRod.chargeSound == null && Game1.soundBank != null)
