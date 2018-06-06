@@ -6,6 +6,8 @@ using StardewValley;
 using StardewValley.Tools;
 using StardewValley.Menus;
 using SObject = StardewValley.Object;
+using Microsoft.Xna.Framework.Graphics;
+using System.Linq;
 
 namespace MineAssist.Framework {
     class StardewWrap {
@@ -161,7 +163,7 @@ namespace MineAssist.Framework {
                 case UseCondition.HealthAtMost:
                     if (isobj) {
                         cmpLarger = false;
-                        cmpVar = getStaminaHealthFromObject(ref so).X;
+                        cmpVar = getStaminaHealthFromObject(ref so).Y;
                     } else {
                         return not ^ false;
                     }
@@ -411,8 +413,12 @@ namespace MineAssist.Framework {
         public static int findItem(ref string itemName, ref string condition, ref string order) {
             int i = -1;
             string[] cons = null;
+            string[] orders = null;
             if (condition != null) {
                 cons = condition.Split(' ');
+            }
+            if (order != null) {
+                orders = order.Split('/');
             }
             Item it = null;
             for (int curi = 0; curi >= 0; ++curi) {
@@ -427,7 +433,11 @@ namespace MineAssist.Framework {
                 if (order == null && it != null) {
                     return i;
                 }
-                if (itemChallengeByOrder(ref it, ref cur, order) > 0) {
+                int res = 0;
+                for (int j=0; res==0 && j<orders.Length; ++j) {
+                    res = itemChallengeByOrder(ref it, ref cur, orders[j]);
+                }
+                if (res > 0) {
                     it = cur;
                     i = curi;
                 }
@@ -441,6 +451,18 @@ namespace MineAssist.Framework {
                 fastUse(i);
             }
         }
+
+        public static System.Reflection.BindingFlags Flags = System.Reflection.BindingFlags.Instance
+                                   | System.Reflection.BindingFlags.GetProperty
+                                   | System.Reflection.BindingFlags.SetProperty
+                                   | System.Reflection.BindingFlags.GetField
+                                   | System.Reflection.BindingFlags.SetField
+                                   | System.Reflection.BindingFlags.NonPublic;
+        public static System.Reflection.FieldInfo GetPrivateFieldInfo(Type type, string fieldName) {
+            var fields = type.GetFields(Flags);
+            return fields.FirstOrDefault(feildInfo => feildInfo.Name == fieldName);
+        }
+
         /// <summary>Directly use item(tool/weapon/foods/placealbe) quickly.</summary>
         /// <param name="itemIndex">The index of item that intend to use.</param>
         public static void fastUse(int itemIndex) {
@@ -460,6 +482,11 @@ namespace MineAssist.Framework {
                     Game1.player.toolPower = 0;
                 }
                 Game1.player.BeginUsingTool();
+                //*
+                if (t is FishingRod fr) {
+                    fr.isTimingCast = false;
+                }
+                //*/
             } else if (t is SObject so) {
                 if(so.Edibility > 0) {
                     Game1.player.eatObject(so);
@@ -493,7 +520,11 @@ namespace MineAssist.Framework {
 
         public static void updateUse(int time) {
             if(isCurrentToolChargable()) {
-                if((double)Game1.player.Stamina < 1.0) {
+                if (Game1.player.CurrentTool is FishingRod) {
+                    updateFishingRod(time);
+                    return;
+                }
+                if ((double)Game1.player.Stamina < 1.0) {
                     return;
                 }
                 if(Game1.player.toolHold <= 0 && canIncreaseToolPower()) {
@@ -508,10 +539,42 @@ namespace MineAssist.Framework {
             }
         }
 
-        public static void endUse() {
+        public static void updateUseGraphic() {
+            if (Game1.player.CurrentTool is FishingRod fr) {
+                //Game1.spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, (DepthStencilState)null, (RasterizerState)null);
+                int num1 = (int)(-(double)Math.Abs(fr.castingChosenCountdown / 2f - fr.castingChosenCountdown) / 50.0);
+                float num2 = (double)fr.castingChosenCountdown <= 0.0 || (double)fr.castingChosenCountdown >= 100.0 ? 1f : fr.castingChosenCountdown / 100f;
+                Game1.spriteBatch.Draw(Game1.mouseCursors, Game1.GlobalToLocal(Game1.viewport, Game1.player.Position + new Vector2(-48f, (float)(num1 - 160))), new Rectangle?(new Rectangle(193, 1868, 47, 12)), Color.White * num2, 0.0f, Vector2.Zero, 4f, SpriteEffects.None, 0.885f);
+                Game1.spriteBatch.Draw(Game1.staminaRect, new Rectangle((int)Game1.GlobalToLocal(Game1.viewport, Game1.player.Position).X - 32 - 4, (int)Game1.GlobalToLocal(Game1.viewport, Game1.player.Position).Y + num1 - 128 - 32 + 12, (int)(164.0 * (double)fr.castingPower), 25), new Rectangle?(Game1.staminaRect.Bounds), Utility.getRedToGreenLerpColor(fr.castingPower) * num2, 0.0f, Vector2.Zero, SpriteEffects.None, 0.887f);
+                //Game1.spriteBatch.End();
+            }
+        }
+        public static void updateFishingRod(int time) {
+            FishingRod fr = (FishingRod)Game1.player.CurrentTool;
+            if (FishingRod.chargeSound == null && Game1.soundBank != null)
+                FishingRod.chargeSound = Game1.soundBank.GetCue("SinWave");
+            if (FishingRod.chargeSound != null && !FishingRod.chargeSound.IsPlaying)
+                FishingRod.chargeSound.Play();
+            fr.castingPower = Math.Max(0.0f, Math.Min(1f, fr.castingPower + fr.castingTimerSpeed * (float)time));
+            if (FishingRod.chargeSound != null)
+                FishingRod.chargeSound.SetVariable("Pitch", 2400f * fr.castingPower);
+            if ((double)fr.castingPower == 1.0 || (double)fr.castingPower == 0.0)
+                fr.castingTimerSpeed = -fr.castingTimerSpeed;
+            Game1.player.armOffset.Y = (float)(2.0 * Math.Round(Math.Sin(DateTime.Now.TimeOfDay.TotalMilliseconds / 250.0), 2));
+            Game1.player.jitterStrength = Math.Max(0.0f, fr.castingPower - 0.5f);
+        }
+
+        public static void endUse(int time) {
             Item t = Game1.player.Items[Game1.player.CurrentToolIndex];
-            if(t is Tool tool && Game1.player.canReleaseTool) {
-                Game1.player.EndUsingTool();
+            if(t is Tool tool) {
+                if (t is FishingRod fr) {
+                    updateFishingRod(time);
+                    fr.isTimingCast = true;
+                    return;
+                }
+                if (Game1.player.canReleaseTool) {
+                    Game1.player.EndUsingTool();
+                }
             }
         }
 
@@ -531,7 +594,7 @@ namespace MineAssist.Framework {
             if (t == null) {
                 return false;
             }
-            if (t is Hoe ||t is WateringCan) {
+            if (t is Hoe ||t is WateringCan || t is FishingRod) {
                 return true;
             }
             return false;

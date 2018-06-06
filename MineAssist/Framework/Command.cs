@@ -31,6 +31,7 @@ namespace MineAssist.Framework {
 
         public abstract void exec(Dictionary<string, string> par);
         public virtual void update() { }
+        public virtual void updateGraphic() { }
         public virtual void end() { isFinish = true; }
     }
 }

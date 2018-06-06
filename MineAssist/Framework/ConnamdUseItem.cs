@@ -54,7 +54,7 @@ namespace MineAssist.Framework {
         }
 
         public override void update() {
-            if (!isContinuous) {
+            if (isFinish || (!isContinuous && !StardewWrap.isCurrentToolChargable())) {
                 return;
             }
             int ms = (DateTime.Now - gt).Milliseconds;
@@ -65,9 +65,14 @@ namespace MineAssist.Framework {
                 StardewWrap.updateUse(ms, ref m_itemName, ref m_condition, ref m_order);
             }
         }
+        public override void updateGraphic() {
+            StardewWrap.updateUseGraphic();
+        }
 
         public override void end() {
-            StardewWrap.endUse();
+            int ms = (DateTime.Now - gt).Milliseconds;
+            gt = DateTime.Now;
+            StardewWrap.endUse(ms);
         }
     }
 }

@@ -54,6 +54,7 @@ namespace MineAssist {
             InputEvents.ButtonPressed += inputEvents_ButtonPressed;
             InputEvents.ButtonReleased += inputEvents_ButtonReleased;
             GameEvents.UpdateTick += gameEvents_UpdateTick;
+            GraphicsEvents.OnPostRenderEvent += GraphicsEvents_OnPostRenderEvent;
         }
 
         public void switchMode(string modeName) {
@@ -101,6 +102,7 @@ namespace MineAssist {
             m_cmdcfg = cfg;
             m_curCmd = Command.create(m_cmdcfg.cmd);
             if (m_curCmd == null) {
+                m_cmdcfg = null;
                 return;
             }
             //command is there so just overide and execute it
@@ -138,6 +140,12 @@ namespace MineAssist {
             e.SuppressButton();
         }
 
+        private void GraphicsEvents_OnPostRenderEvent(object sender, EventArgs e) {
+            if (m_curCmd != null && !m_curCmd.isFinish) {
+                m_curCmd.updateGraphic();
+                return;
+            }
+        }
         private void gameEvents_UpdateTick(object sender, EventArgs e) {
             //if last command is not finished, update it
             if (m_curCmd != null && !m_curCmd.isFinish) {
