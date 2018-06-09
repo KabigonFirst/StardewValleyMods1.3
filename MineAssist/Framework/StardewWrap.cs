@@ -12,6 +12,7 @@ using System.Linq;
 namespace MineAssist.Framework {
     class StardewWrap {
 
+        /// <summary>Pause the game.</summary>
         public static void pause() {
             if (!Game1.IsMasterGame) {
                 Game1.chatBox.addErrorMessage(Game1.content.LoadString("Strings\\UI:Chat_HostOnlyCommand"));
@@ -28,6 +29,8 @@ namespace MineAssist.Framework {
             //*/
 #endif
         }
+
+        /// <summary>Open journal menu.</summary>
         public static void openJournalMenu() {
             Game1.activeClickableMenu = (IClickableMenu)new QuestLog();
         }
@@ -60,9 +63,7 @@ namespace MineAssist.Framework {
             recipe.consumeIngredients();
             Item craftedItem = recipe.createItem();
 #if !DEBUG
-            //*
             Game1.player.craftingRecipes[itemName] += recipe.numberProducedPerCraft;
-            //*/
 #endif
 
             //update related events
@@ -365,6 +366,7 @@ namespace MineAssist.Framework {
             return -2;
         }
 
+        /// <summary>Get Stamina and Health restore effect from object.</summary>
         public static Vector2 getStaminaHealthFromObject(ref SObject so) {
             Vector2 ret = new Vector2();
             int num = (int)Math.Ceiling((double)so.Edibility * 2.5) + (int)(so.Quality) * so.Edibility;
@@ -419,6 +421,8 @@ namespace MineAssist.Framework {
             }
             if (order != null) {
                 orders = order.Split('/');
+            } else {
+                orders = new string[]{ null };
             }
             Item it = null;
             for (int curi = 0; curi >= 0; ++curi) {
@@ -445,22 +449,28 @@ namespace MineAssist.Framework {
             return i;
         }
 
-        public static void fastUse(ref string itemName, ref string condition, ref string order) {
+        public static void fastUse(ref string itemName, ref string condition, ref string order, bool specialAction = false) {
             int i = findItem(ref itemName, ref condition, ref order);
             if (i >= 0) {
-                fastUse(i);
+                fastUse(i, specialAction);
             }
         }
 
         /// <summary>Directly use item(tool/weapon/foods/placealbe) quickly.</summary>
         /// <param name="itemIndex">The index of item that intend to use.</param>
-        public static void fastUse(int itemIndex) {
-            //GameLocation.openCraftingMenu("Starcase");
+        public static void fastUse(int itemIndex, bool specialAction = false) {
             Item t = Game1.player.Items[itemIndex];
             if (t == null) {
                 return;
             }
+
             Game1.player.CurrentToolIndex = itemIndex;
+            if (specialAction) {
+                if (t is MeleeWeapon) {
+                    ((MeleeWeapon)t).animateSpecialMove(Game1.player);
+                }
+                return;
+            }
             if (t is Tool) {
                 //shake player to warn low Stamina
                 if((double)Game1.player.Stamina <= 20.0 && !(t is MeleeWeapon)) {
@@ -499,16 +509,16 @@ namespace MineAssist.Framework {
             }
         }
 
-        public static void updateUse(int time, ref string itemName, ref string condition, ref string order) {
+        public static void updateUse(int time, ref string itemName, ref string condition, ref string order, bool specialAction = false) {
             int position = findItem(ref itemName, ref condition, ref order);
             if(position >= 0) {
                 Game1.player.CurrentToolIndex = position;
-                updateUse(time);
+                updateUse(time, specialAction);
             }
         }
 
-        public static void updateUse(int time) {
-            if(isCurrentToolChargable()) {
+        public static void updateUse(int time, bool specialAction = false) {
+            if (!specialAction && isCurrentToolChargable()) {
                 if (Game1.player.CurrentTool is FishingRod) {
                     updateFishingRod(time);
                     return;
@@ -524,7 +534,7 @@ namespace MineAssist.Framework {
                         Game1.player.toolPowerIncrease();
                 }
             } else if (!isPlayerBusy() && canCurrentItemContiniouslyUse()) {
-                fastUse(Game1.player.CurrentToolIndex);
+                fastUse(Game1.player.CurrentToolIndex, specialAction);
             }
         }
 
@@ -554,9 +564,9 @@ namespace MineAssist.Framework {
             Game1.player.jitterStrength = Math.Max(0.0f, fr.castingPower - 0.5f);
         }
 
-        public static void endUse(int time) {
+        public static void endUse(int time, bool specialAction = false) {
             Item t = Game1.player.Items[Game1.player.CurrentToolIndex];
-            if(t is Tool tool) {
+            if(!specialAction && t is Tool tool) {
                 if (t is FishingRod fr) {
                     updateFishingRod(time);
                     fr.isTimingCast = true;

@@ -92,17 +92,16 @@ namespace CampfireCooking {
                 if(ret != null && m_config.cookableItemNames.Contains(ret.Name)) {
                     return ret;
                 }
-            }
+            } else if (Game1.player.currentLocation is StardewValley.Locations.DecoratableLocation dl) {
 #if !DEBUG
-            else if (Game1.player.currentLocation is StardewValley.Locations.DecoratableLocation dl) {
                 foreach (SObject @object in dl.furniture) {
                     if(m_config.cookableItemNames.Contains(@object.Name)) {
                         if(@object.boundingBox.Value.Contains((int)placePos.X*64+32, (int)placePos.Y*64+32))
                             return @object;
                     }
                 }
-            }
 #endif
+            }
             return null;
         }
     }
