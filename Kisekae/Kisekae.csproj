@@ -48,11 +48,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Framework\Alert.cs" />
-    <Compile Include="Framework\CharacterCustomizationMenu.cs" />
+    <Compile Include="Framework\ITabMenu.cs" />
+    <Compile Include="Framework\MenuCustomize.cs" />
+    <Compile Include="Framework\MenuFarmerMakeup.cs" />
     <Compile Include="Framework\ContentHelper.cs" />
     <Compile Include="Config\GlobalConfig.cs" />
-    <Compile Include="Config\LocalConfig.cs" />
-    <Compile Include="Framework\MenuTab.cs" />
+    <Compile Include="Framework\LocalConfig.cs" />
+    <Compile Include="Framework\Dresser.cs" />
+    <Compile Include="Framework\FarmerMakeup.cs" />
+    <Compile Include="Framework\LoadMenuPatcher.cs" />
+    <Compile Include="Framework\MenuAbout.cs" />
+    <Compile Include="Framework\MenuFavorites.cs" />
+    <Compile Include="Framework\MenuFavoritesExtras.cs" />
     <Compile Include="Framework\Tile.cs" />
     <Compile Include="Kisekae.cs" />
     <Compile Include="ModConstants.cs" />

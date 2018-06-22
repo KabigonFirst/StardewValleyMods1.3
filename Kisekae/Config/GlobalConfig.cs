@@ -1,4 +1,6 @@
-﻿namespace Kisekae.Config
+﻿using StardewModdingAPI;
+
+namespace Kisekae.Config
 {
     /// <summary>The JSON model for global settings read from the mod's config file.</summary>
     public class GlobalConfig
@@ -7,7 +9,7 @@
         public bool IsEnable = true;
 
         /// <summary>The keyboard button which opens the menu.</summary>
-        public string MenuAccessKey { get; set; } = "C";
+        public SButton MenuAccessKey { get; set; } = SButton.C;
 
         /// <summary>Whether to show the 'new' button next to the customisation menu tabs. This is automatically disabled after the player sees the menu once.</summary>
         public bool ShowIntroBanner { get; set; } = true;
@@ -46,6 +48,9 @@
         public bool HideMaleSkirts { get; set; }
 
         /// <summary>Whether to temporarily zoom out when showing the menu.</summary>
-        public bool MenuZoomOut { get; set; } = true;
+        public bool MenuZoomOut { get; set; } = false;
+
+        /// <summary>Whether gender can be changed.</summary>
+        public bool CanChangeGender { get; set; } = false;
     }
 }
