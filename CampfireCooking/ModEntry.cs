@@ -89,15 +89,16 @@ namespace CampfireCooking {
             }
             if(Game1.player.currentLocation.objects.ContainsKey(placePos)) {
                 SObject  ret =  Game1.player.currentLocation.objects[placePos];
-                if(ret != null && m_config.cookableItemNames.Contains(ret.Name)) {
+                if(ret != null && m_config.cookableItemNames.Contains(ret.Name) && ret.IsOn) {
                     return ret;
                 }
             } else if (Game1.player.currentLocation is StardewValley.Locations.DecoratableLocation dl) {
 #if !DEBUG
-                foreach (SObject @object in dl.furniture) {
-                    if(m_config.cookableItemNames.Contains(@object.Name)) {
-                        if(@object.boundingBox.Value.Contains((int)placePos.X*64+32, (int)placePos.Y*64+32))
-                            return @object;
+                foreach (SObject obj in dl.furniture) {
+                    if(m_config.cookableItemNames.Contains(obj.Name)) {
+                        if (obj.boundingBox.Value.Contains((int)placePos.X * 64 + 32, (int)placePos.Y * 64 + 32) && obj.IsOn) {
+                            return obj;
+                        }
                     }
                 }
 #endif
