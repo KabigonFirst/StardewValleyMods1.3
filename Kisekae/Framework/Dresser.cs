@@ -93,7 +93,7 @@ namespace Kisekae.Framework {
         private void PatchFarmhouseTilesheet(FarmHouse farmhouse) {
             //m_env.Monitor.Log("PatchFarmhouseTilesheet");
 
-            if (farmhouse.map == null) {
+            if (farmhouse.Map == null) {
                 return;
             }
             string tilesheetPath = m_env.Helper.Content.GetActualAssetKey("overrides/dresser.png", ContentSource.ModFolder);
@@ -133,7 +133,7 @@ namespace Kisekae.Framework {
                 return;
             }
 
-            if (farmhouse.map == null) {
+            if (farmhouse.Map == null) {
                 return;
             }
 

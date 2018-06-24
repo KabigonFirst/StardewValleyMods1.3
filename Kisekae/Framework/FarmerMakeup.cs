@@ -9,6 +9,7 @@ using SFarmer = StardewValley.Farmer;
 using StardewModdingAPI;
 using Kisekae.Config;
 using System.IO;
+using LAttributes = Kisekae.Config.LocalConfig.Attributes;
 
 namespace Kisekae.Framework {
     class FarmerMakeup {
@@ -49,7 +50,7 @@ namespace Kisekae.Framework {
         }
 
         /// <summary>Update config for first run and old version config.</summary>
-        /// <returns>Returns whether the config is just initilized.</returns>
+        /// <returns>Returns whether the config was just initilized(i.e. first run).</returns>
         public bool UpdateCurConfig() {
             if (m_config.FirstRun) {
                 m_env.Monitor.Log("First run:" + m_config.SaveName);
@@ -82,6 +83,7 @@ namespace Kisekae.Framework {
         /// <param name="which">Which configure to use.</param>
         public void ApplyConfig(int which = 0) {
             if (UpdateCurConfig()) {
+                // not necessary to apply config on first run
                 return;
             }
 
@@ -101,9 +103,10 @@ namespace Kisekae.Framework {
 
         /// <summary>Load favorite config to current config.</summary>
         /// <param name="which">Which configure to load.</param>
-        public void LoadFavorite(int which) {
+        /// <returns>Returns whether the favorite exists and was loaded.</returns>
+        public bool LoadFavorite(int which) {
             if (!m_config.HasFavSlot(which))
-                return;
+                return false;
 
             /*
             ChangeFace(m_config.ChosenFace[which]);
@@ -133,6 +136,7 @@ namespace Kisekae.Framework {
             ChangeHairColor(m_config.ChosenHairColor[which]);
             ChangeEyeColor(m_config.ChosenEyeColor[which]);
             ChangeBottomsColor(m_config.ChosenBottomsColor[which]);
+            return true;
         }
 
         /// <summary>Save the current values to the given favorite.</summary>
@@ -464,17 +468,17 @@ namespace Kisekae.Framework {
         public void Randomize() {
             // randomise base
             if (m_farmer.isMale) {
-                m_farmer.changeHairStyle(Game1.random.Next(16));
-                ChangeBottoms(Game1.random.Next(MaleBottomsTypes), true);
-                ChangeShoes(Game1.random.Next(MaleShoeTypes), true);
+                //m_farmer.changeHairStyle(Game1.random.Next(16));
                 ChangeFace(Game1.random.Next(MaleFaceTypes), true);
                 ChangeNose(Game1.random.Next(MaleNoseTypes), true);
+                ChangeBottoms(Game1.random.Next(MaleBottomsTypes), true);
+                ChangeShoes(Game1.random.Next(MaleShoeTypes), true);
             } else {
-                m_farmer.changeHairStyle(Game1.random.Next(16, 32));
-                ChangeBottoms(Game1.random.Next(FemaleBottomsTypes), true);
-                ChangeShoes(Game1.random.Next(FemaleShoeTypes), true);
+                //m_farmer.changeHairStyle(Game1.random.Next(16, 32));
                 ChangeFace(Game1.random.Next(FemaleFaceTypes), true);
                 ChangeNose(Game1.random.Next(FemaleNoseTypes), true);
+                ChangeBottoms(Game1.random.Next(FemaleBottomsTypes), true);
+                ChangeShoes(Game1.random.Next(FemaleShoeTypes), true);
             }
             FixBase(true);
 
@@ -482,19 +486,6 @@ namespace Kisekae.Framework {
             int acc = 1;
             if (Game1.random.NextDouble() < 0.88) {
                 acc = Game1.random.Next(1, 129);
-                /*
-                int maxRange = (m_config.ChosenFace[0] == 0) ? 127 : 131;
-                acc = Game1.random.Next(maxRange);
-                if (acc > 19 && maxRange > 127) {
-                    acc += 108;
-                }
-                if (!m_farmer.isMale) {
-                    acc = Game1.random.Next(6, maxRange);
-                    if (acc > 19 && maxRange > 127) {
-                        acc += 108;
-                    }
-                }
-                */
             }
             ChangeAccessory(acc);
 

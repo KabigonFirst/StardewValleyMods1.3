@@ -146,7 +146,7 @@ namespace Kisekae.Framework {
                 if (!this.QuickLoadFavButtons[i].containsPoint(x, y)) {
                     continue;
                 }
-                if (LoadFavorite(i + 1)) {
+                if (m_farmerMakeup.LoadFavorite(i + 1)) {
                     Game1.playSound("yoba");
                 } else {
                     this.Alerts.Add(new Alert(Game1.mouseCursors, new Rectangle(268, 470, 16, 16), Game1.viewport.Width / 2 - (700 + IClickableMenu.borderWidth * 2) / 2, Game1.viewport.Height / 2 - (500 + IClickableMenu.borderWidth * 2) / 2, "Uh oh! No Favorite is Set!", 1000, false));
@@ -642,19 +642,8 @@ namespace Kisekae.Framework {
 
         /// <summary>Exit the menu.</summary>
         public void exit() {
-            m_env.Monitor.Log("customsize config saved");
+            //m_env.Monitor.Log("customsize config saved");
             m_farmerMakeup.m_config.save();
-        }
-
-        /// <summary>Load the specified favorite.</summary>
-        /// <param name="index">The index of the favorite to load.</param>
-        /// <returns>Returns whether the favorite exists and was loaded.</returns>
-        private bool LoadFavorite(int index) {
-            if (!m_farmerMakeup.m_config.HasFavSlot(index)) {
-                return false;
-            }
-            m_farmerMakeup.LoadFavorite(index);
-            return true;
         }
     }
 }
