@@ -8,24 +8,21 @@ using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
 using Kisekae.Config;
+using Kisekae.Menu;
 
 namespace Kisekae.Framework {
     /// <summary>The menu which lets the player customise their character's appearance.</summary>
-    internal class MenuFarmerMakeup : IClickableMenu {
+    internal class MenuFarmerMakeup : AutoMenu {
         /*********
         ** Properties
         *********/
         #region Metadata
-        /// <summary>Global Mod Interface.</summary>
-        private readonly IMod m_env;
-        /// <summary>Encapsulates the underlying mod texture management.</summary>
-        private readonly ContentHelper m_contentHelper;
-        /// <summary>The current per-save config settings.</summary>
-        private readonly LocalConfig PlayerConfig;
         /// <summary>The global config settings.</summary>
-        private readonly GlobalConfig GlobalConfig;
+        private readonly GlobalConfig m_globalConfig;
         /// <summary>Core component to manipulate player appearance.</summary>
         private readonly FarmerMakeup m_farmerMakeup;
+        /// <summary>Our local menu texture.</summary>
+        private readonly Texture2D m_menuTextures;
         #endregion
 
         #region GUI Components
@@ -43,7 +40,7 @@ namespace Kisekae.Framework {
             About,
         }
         /// <summary>Tabs and subtabs.</summary>
-        private List<ITabMenu> m_tabs = new List<ITabMenu>();
+        private List<TabMenu> m_tabs = new List<TabMenu>();
         /// <summary>Parent of Tab.</summary>
         private List<int> m_tabParents = new List<int>();
         /// <summary>The tabs used to switch submenu.</summary>
@@ -64,7 +61,7 @@ namespace Kisekae.Framework {
         /// <summary>The tooltip text to draw next to the cursor.</summary>
         private string HoverText;
         /// <summary>The zoom level before the menu was opened.</summary>
-        private readonly float PlayerZoomLevel;
+        private float m_playerZoomLevel;
         #endregion
 
         /*********
@@ -77,52 +74,43 @@ namespace Kisekae.Framework {
         /// <param name="globalConfig">The global config settings.</param>
         /// <param name="playerConfig">The current per-save config settings.</param>
         /// <param name="zoomLevel">The zoom level before the menu was opened.</param>
-        public MenuFarmerMakeup(IMod env, ContentHelper contentHelper, GlobalConfig globalConfig, LocalConfig playerConfig)
-            : base(
-                  x: Game1.viewport.Width / 2 - (680 + IClickableMenu.borderWidth * 2) / 2,
-                  y: Game1.viewport.Height / 2 - (500 + IClickableMenu.borderWidth * 2) / 2 - Game1.tileSize,
-                  width: 632 + IClickableMenu.borderWidth * 2,
-                  height: 500 + IClickableMenu.borderWidth * 4 + Game1.tileSize
+        public MenuFarmerMakeup(IMod env, FarmerMakeup farmerMakeup, GlobalConfig globalConfig)
+            : base(env, 0, 0,
+                  width: 700 + s_borderSize,
+                  height: 580 + s_borderSize
             ) {
             // save metadata
-            m_env = env;
-            m_contentHelper = contentHelper;
-            this.GlobalConfig = globalConfig;
-            this.PlayerConfig = playerConfig;
-            m_farmerMakeup = new FarmerMakeup(env, contentHelper);
+            m_globalConfig = globalConfig;
+            m_farmerMakeup = farmerMakeup;
             m_farmerMakeup.m_farmer = Game1.player;
-            m_farmerMakeup.m_config = playerConfig;
-            this.PlayerZoomLevel = Game1.options.zoomLevel;
+            m_playerZoomLevel = Game1.options.zoomLevel;
             exitFunction = exit;
+            m_menuTextures = Game1.content.Load<Texture2D>(ContentHelper.s_MenuTextureKey);
 
-            // override zoom level
-            Game1.options.zoomLevel = this.GlobalConfig.MenuZoomOut ? 0.75f : 1f;
+            // build menu
+            Game1.player.faceDirection(2);
+            Game1.player.FarmerSprite.StopAnimation();
+
+            if (m_globalConfig.MenuZoomLock) {
+                Game1.options.zoomLevel = m_globalConfig.MenuZoomOut ? 0.75f : 1f;
+            }
             Game1.overrideGameMenuReset = true;
             Game1.game1.refreshWindowSettings();
-            m_tabs.Add(new MenuCustomize(env, contentHelper, globalConfig, playerConfig, m_farmerMakeup, this));
+            m_tabs.Add(new MenuCustomize(env, globalConfig, m_farmerMakeup.m_config, m_farmerMakeup, this));
             m_tabParents.Add(-1);
             m_tabs.Add(null);
             m_tabParents.Add(-1);
-            m_tabs.Add(new MenuFavorites(env, contentHelper, globalConfig, m_farmerMakeup, this));
+            m_tabs.Add(new MenuFavorites(env, m_farmerMakeup, this));
             m_tabParents.Add((int)MenuTab.ManageFavorites);
-            m_tabs.Add(new MenuFavoritesExtras(env, contentHelper, globalConfig, m_farmerMakeup));
+            m_tabs.Add(new MenuFavoritesExtras(env, m_farmerMakeup));
             m_tabParents.Add((int)MenuTab.ManageFavorites);
-            m_tabs.Add(new MenuAbout(env, contentHelper, globalConfig));
+            m_tabs.Add(new MenuAbout(env, globalConfig, ref m_playerZoomLevel));
             m_tabParents.Add(-1);
+
             this.updateLayout();
-            Game1.player.faceDirection(2);
-            Game1.player.FarmerSprite.StopAnimation();
         }
 
         #region EventHandler
-        /// <summary>The method called when the game window changes size.</summary>
-        /// <param name="oldBounds">The former viewport.</param>
-        /// <param name="newBounds">The new viewport.</param>
-        public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds) {
-            base.gameWindowSizeChanged(oldBounds, newBounds);
-            updateLayout();
-        }
-
         /// <summary>The method invoked when the player presses the left mouse button.</summary>
         /// <param name="x">The X-position of the cursor.</param>
         /// <param name="y">The Y-position of the cursor.</param>
@@ -130,7 +118,7 @@ namespace Kisekae.Framework {
         public override void receiveLeftClick(int x, int y, bool playSound = true) {
             // tabs
             for (int i = 0; i < m_tabMenus.Count; ++i) {
-                if (IsCurTab(i) && m_tabMenus[i].containsPoint(x, y)) {
+                if (IsVisibleTab(i) && m_tabMenus[i].containsPoint(x, y)) {
                     if (i == m_tabParents[m_curTab]) {
                         return;
                     }
@@ -146,14 +134,13 @@ namespace Kisekae.Framework {
                 exitThisMenuNoSound();
             }
             // hide 'new' button
-            if (this.GlobalConfig.ShowIntroBanner) {
-                this.GlobalConfig.ShowIntroBanner = false;
-                m_env.Helper.WriteConfig(this.GlobalConfig);
+            if (m_globalConfig.ShowIntroBanner) {
+                m_globalConfig.ShowIntroBanner = false;
+                m_env.Helper.WriteConfig(m_globalConfig);
             }
             // tab contents
             m_tabs[m_curTab].receiveLeftClick(x, y, playSound);
         }
-
         /// <summary>The method invoked while the player is holding down the left mouse button.</summary>
         /// <param name="x">The X-position of the cursor.</param>
         /// <param name="y">The Y-position of the cursor.</param>
@@ -162,7 +149,6 @@ namespace Kisekae.Framework {
                 m_tabs[m_curTab].leftClickHeld(x, y);
             } catch { }
         }
-
         /// <summary>The method invoked when the player releases the left mouse button.</summary>
         /// <param name="x">The X-position of the cursor.</param>
         /// <param name="y">The Y-position of the cursor.</param>
@@ -171,7 +157,6 @@ namespace Kisekae.Framework {
                 m_tabs[m_curTab].releaseLeftClick(x, y);
             } catch { }
         }
-
         /// <summary>The method invoked when the player presses the left mouse button.</summary>
         /// <param name="x">The X-position of the cursor.</param>
         /// <param name="y">The Y-position of the cursor.</param>
@@ -181,7 +166,6 @@ namespace Kisekae.Framework {
                 m_tabs[m_curTab].receiveRightClick(x, y, playSound);
             } catch { }
         }
-
         /// <summary>The method invoked when the player presses a keyboard button.</summary>
         /// <param name="key">The key that was pressed.</param>
         public override void receiveKeyPress(Keys key) {
@@ -194,7 +178,6 @@ namespace Kisekae.Framework {
                 m_tabs[m_curTab].receiveKeyPress(key);
             } catch { }
         }
-
         /// <summary>Update the menu state.</summary>
         /// <param name="time">The elapsed game time.</param>
         public override void update(GameTime time) {
@@ -206,7 +189,6 @@ namespace Kisekae.Framework {
             this.FavTabArrow?.update(time);
             this.FloatingNew?.update(time);
         }
-
         /// <summary>The method invoked when the cursor is over a given position.</summary>
         /// <param name="x">The X mouse position.</param>
         /// <param name="y">The Y mouse position.</param>
@@ -234,14 +216,13 @@ namespace Kisekae.Framework {
             // tab contents
             m_tabs[m_curTab].performHoverAction(x, y);
         }
-
         /// <summary>Draw the menu to the screen.</summary>
         /// <param name="spriteBatch">The sprite batch to which to draw.</param>
         public override void draw(SpriteBatch spriteBatch) {
             spriteBatch.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
 
             // menu background
-            Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width + 50, height, false, true);
+            Game1.drawDialogueBox(xPositionOnScreen - Game1.tileSize / 4, yPositionOnScreen - Game1.tileSize - Game1.tileSize/4, width + Game1.tileSize / 2, height + Game1.tileSize + Game1.tileSize/2, false, true);
 
             // tabs
             {
@@ -253,15 +234,15 @@ namespace Kisekae.Framework {
                 bool isExtraOutfitsTab = this.m_curTab == (int)MenuTab.FavoritesExtras;
 
                 // get tab positions
-                Vector2 character = new Vector2(xPositionOnScreen + 45+64*0, yPositionOnScreen + (isCustomiseTab ? 25 : 16));
-                Vector2 favorites = new Vector2(xPositionOnScreen + 45+64*1, yPositionOnScreen + (isFavoriteTab  ? 25 : 16));
-                Vector2 about     = new Vector2(xPositionOnScreen + 45+64*2, yPositionOnScreen + (isAboutTab     ? 25 : 16));
-                Vector2 quickFavorites = new Vector2(xPositionOnScreen - (isMainOutfitsTab  ? 40 : 47), yPositionOnScreen + 107);
-                Vector2 extraFavorites = new Vector2(xPositionOnScreen - (isExtraOutfitsTab ? 40 : 47), yPositionOnScreen + 171);
+                Vector2 character = new Vector2(xPositionOnScreen + 45 + 64 * 0, yPositionOnScreen - Game1.tileSize + (isCustomiseTab ? 9 : 0));
+                Vector2 favorites = new Vector2(xPositionOnScreen + 45 + 64 * 1, yPositionOnScreen - Game1.tileSize + (isFavoriteTab ? 9 : 0));
+                Vector2 about = new Vector2(xPositionOnScreen + 45 + 64 * 2, yPositionOnScreen - Game1.tileSize + (isAboutTab ? 9 : 0));
+                Vector2 quickFavorites = new Vector2(xPositionOnScreen - (isMainOutfitsTab ? 57 : 64), yPositionOnScreen + Game1.tileSize / 2);
+                Vector2 extraFavorites = new Vector2(xPositionOnScreen - (isExtraOutfitsTab ? 57 : 64), yPositionOnScreen + Game1.tileSize / 2 + 64);
 
                 // customise tab
                 spriteBatch.Draw(Game1.mouseCursors, character, new Rectangle(16, 368, 16, 16), Color.White, 0f, Vector2.Zero, Game1.pixelZoom, SpriteEffects.None, 0.0001f);
-                Game1.player.FarmerRenderer.drawMiniPortrat(spriteBatch, new Vector2(xPositionOnScreen + 53, yPositionOnScreen + (Game1.player.isMale ? (isCustomiseTab ? 35 : 26) : (isCustomiseTab ? 32 : 23))), 0.00011f, 3f, 2, Game1.player);
+                Game1.player.FarmerRenderer.drawMiniPortrat(spriteBatch, new Vector2(xPositionOnScreen + 53, yPositionOnScreen - Game1.tileSize + (Game1.player.isMale ? (isCustomiseTab ? 19 : 10) : (isCustomiseTab ? 16 : 7))), 0.00011f, 3f, 2, Game1.player);
                 // favorite tab
                 spriteBatch.Draw(Game1.mouseCursors, favorites, new Rectangle(16, 368, 16, 16), Color.White, 0f, Vector2.Zero, Game1.pixelZoom, SpriteEffects.None, 0.0001f);
                 m_tabMenus[(int)MenuTab.ManageFavorites].draw(spriteBatch);
@@ -270,8 +251,8 @@ namespace Kisekae.Framework {
                 m_tabMenus[(int)MenuTab.About].draw(spriteBatch);
                 // favorite subtabs
                 if (isFavoriteTab) {
-                    spriteBatch.Draw(m_contentHelper.m_menuTextures, quickFavorites, new Rectangle(52, 202, 16, 16), Color.White, 0f, Vector2.Zero, Game1.pixelZoom, SpriteEffects.None, 0.0001f);
-                    spriteBatch.Draw(m_contentHelper.m_menuTextures, extraFavorites, new Rectangle(52, 202, 16, 16), Color.White, 0f, Vector2.Zero, Game1.pixelZoom, SpriteEffects.None, 0.0001f);
+                    spriteBatch.Draw(m_menuTextures, quickFavorites, new Rectangle(52, 202, 16, 16), Color.White, 0f, Vector2.Zero, Game1.pixelZoom, SpriteEffects.None, 0.0001f);
+                    spriteBatch.Draw(m_menuTextures, extraFavorites, new Rectangle(52, 202, 16, 16), Color.White, 0f, Vector2.Zero, Game1.pixelZoom, SpriteEffects.None, 0.0001f);
                     m_tabMenus[(int)MenuTab.Favorites].draw(spriteBatch);
                     m_tabMenus[(int)MenuTab.FavoritesExtras].draw(spriteBatch);
                 }
@@ -281,7 +262,7 @@ namespace Kisekae.Framework {
             this.CancelButton.draw(spriteBatch);
 
             // tab floaters
-            if (this.GlobalConfig.ShowIntroBanner)
+            if (m_globalConfig.ShowIntroBanner)
                 FloatingNew?.draw(spriteBatch, true, 400, 950);
             if (this.ShowFavTabArrow)
                 FavTabArrow?.draw(spriteBatch, true, 400, 950);
@@ -289,51 +270,48 @@ namespace Kisekae.Framework {
             // tab contents
             m_tabs[m_curTab].draw(spriteBatch);
 
-            // cursor
+            // hovertext
             IClickableMenu.drawHoverText(spriteBatch, this.HoverText, Game1.smallFont);
+        }
+        /// <summary>Update the menu layout for a change in the zoom level or viewport size.</summary>
+        public override void updateLayout() {
+            // reset window position
+            this.xPositionOnScreen = (Game1.viewport.Width - this.width) / 2;
+            this.yPositionOnScreen = (Game1.viewport.Height - this.height) / 2;
+            this.yPositionOnScreen += Game1.tileSize / 2;
+
+            // tabs
+            m_tabMenus.Clear();
+            m_tabMenus.Add(new ClickableTextureComponent("Customize Character", new Rectangle(xPositionOnScreen + 62, yPositionOnScreen - Game1.tileSize + 24, 50, 50), "", "", m_menuTextures, new Rectangle(9, 48, 8, 11), Game1.pixelZoom));
+            m_tabMenus.Add(new ClickableTextureComponent("Manage Favorites", new Rectangle(xPositionOnScreen + 125, yPositionOnScreen - Game1.tileSize + 24, 50, 50), "", "", m_menuTextures, new Rectangle(24, 26, 8, 8), Game1.pixelZoom));
+            m_tabMenus.Add(new ClickableTextureComponent("Quick Outfits", new Rectangle(xPositionOnScreen - 40, yPositionOnScreen + Game1.tileSize / 2 + 15, 50, 50), "", "", m_menuTextures, new Rectangle(8, 26, 8, 8), Game1.pixelZoom));
+            m_tabMenus.Add(new ClickableTextureComponent("Extra Outfits", new Rectangle(xPositionOnScreen - 33, yPositionOnScreen + Game1.tileSize / 2 + 15 + Game1.tileSize, 50, 50), "", "", m_menuTextures, new Rectangle(0, 26, 8, 8), Game1.pixelZoom));
+            m_tabMenus.Add(new ClickableTextureComponent("About", new Rectangle(xPositionOnScreen + 188, yPositionOnScreen - Game1.tileSize + 17, 50, 50), "", "", m_menuTextures, new Rectangle(0, 48, 8, 11), Game1.pixelZoom));
+
+            // tab positions
+            UpdateTabFloaters();
+            UpdateTabPositions();
+
+            // cancel button
+            this.CancelButton = new ClickableTextureComponent(new Rectangle((xPositionOnScreen + 675) + Game1.pixelZoom * 12, yPositionOnScreen - Game1.tileSize, Game1.pixelZoom * 10, Game1.pixelZoom * 10), Game1.mouseCursors, new Rectangle(337, 494, 12, 12), Game1.pixelZoom);
+
+            m_tabs[m_curTab].updateLayout();
         }
         #endregion
 
         /*********
         ** Private methods
         *********/
-        /// <summary>Update the menu layout for a change in the zoom level or viewport size.</summary>
-        private void updateLayout() {
-            // reset window position
-            this.xPositionOnScreen = Game1.viewport.Width / 2 - (680 + IClickableMenu.borderWidth * 2) / 2;
-            this.yPositionOnScreen = Game1.viewport.Height / 2 - (500 + IClickableMenu.borderWidth * 2) / 2 - Game1.tileSize;
-
-            // initialise all components
-            Texture2D menuTextures = m_contentHelper.m_menuTextures;
-
-            // tabs
-            m_tabMenus.Clear();
-            m_tabMenus.Add(new ClickableTextureComponent("Customize Character", new Rectangle(xPositionOnScreen + 62, yPositionOnScreen + 40, 50, 50), "", "", menuTextures, new Rectangle(9, 48, 8, 11), Game1.pixelZoom));
-            m_tabMenus.Add(new ClickableTextureComponent("Manage Favorites", new Rectangle(xPositionOnScreen + 125, yPositionOnScreen + 40, 50, 50), "", "", menuTextures, new Rectangle(24, 26, 8, 8), Game1.pixelZoom));
-            m_tabMenus.Add(new ClickableTextureComponent("Quick Outfits", new Rectangle(xPositionOnScreen - 23, yPositionOnScreen + 122, 50, 50), "", "", menuTextures, new Rectangle(8, 26, 8, 8), Game1.pixelZoom));
-            m_tabMenus.Add(new ClickableTextureComponent("Extra Outfits", new Rectangle(xPositionOnScreen - 23, yPositionOnScreen + 186, 50, 50), "", "", menuTextures, new Rectangle(0, 26, 8, 8), Game1.pixelZoom));
-            m_tabMenus.Add(new ClickableTextureComponent("About", new Rectangle(xPositionOnScreen + 188, yPositionOnScreen + 33, 50, 50), "", "", menuTextures, new Rectangle(0, 48, 8, 11), Game1.pixelZoom));
-
-            // tab positions
-            this.UpdateTabFloaters();
-            this.UpdateTabPositions();
-
-            // cancel button
-            this.CancelButton = new ClickableTextureComponent(new Rectangle((xPositionOnScreen + 675) + Game1.pixelZoom * 12, (yPositionOnScreen - 100) + Game1.tileSize + Game1.pixelZoom * 14, Game1.pixelZoom * 10, Game1.pixelZoom * 10), Game1.mouseCursors, new Rectangle(337, 494, 12, 12), Game1.pixelZoom);
-
-            m_tabs[m_curTab].updateLayout();
-        }
-
         /// <summary>Reinitialise components which bring attention to tabs.</summary>
         private void UpdateTabFloaters() {
-            this.FloatingNew = new TemporaryAnimatedSprite("menuTextures", new Rectangle(0, 102, 23, 9), 115, 5, 1, new Vector2(xPositionOnScreen - 90, yPositionOnScreen + 35), false, false, 0.89f, 0f, Color.White, Game1.pixelZoom, 0f, 0f, 0f, true) {
+            this.FloatingNew = new TemporaryAnimatedSprite(ContentHelper.s_MenuTextureKey, new Rectangle(0, 102, 23, 9), 115, 5, 1, new Vector2(xPositionOnScreen - 90, yPositionOnScreen), false, false, 0.89f, 0f, Color.White, Game1.pixelZoom, 0f, 0f, 0f, true) {
                 totalNumberOfLoops = 1,
                 yPeriodic = true,
                 yPeriodicLoopTime = 1500f,
                 yPeriodicRange = Game1.tileSize / 8f
             };
 
-            this.FavTabArrow = new TemporaryAnimatedSprite("menuTextures", new Rectangle(0, 120, 12, 14), 100f, 3, 5, new Vector2(xPositionOnScreen + 120, yPositionOnScreen), false, false, 0.89f, 0f, Color.White, 3f, 0f, 0f, 0f, true) {
+            this.FavTabArrow = new TemporaryAnimatedSprite(ContentHelper.s_MenuTextureKey, new Rectangle(1, 120, 12, 14), 100f, 3, 5, new Vector2(xPositionOnScreen + 120, yPositionOnScreen - Game1.tileSize), false, false, 0.89f, 0f, Color.White, 3f, 0f, 0f, 0f, true) {
                 yPeriodic = true,
                 yPeriodicLoopTime = 1500f,
                 yPeriodicRange = Game1.tileSize / 8f
@@ -342,26 +320,27 @@ namespace Kisekae.Framework {
 
         /// <summary>Recalculate the positions for all tabs and subtabs.</summary>
         private void UpdateTabPositions() {
-            m_tabMenus[(int)MenuTab.Customise].bounds.Y = this.yPositionOnScreen + (this.m_curTab == (int)MenuTab.Customise ? 50 : 40);
-            m_tabMenus[(int)MenuTab.ManageFavorites].bounds.Y = this.yPositionOnScreen + (this.m_curTab == (int)MenuTab.Favorites || this.m_curTab == (int)MenuTab.FavoritesExtras ? 50 : 40);
-            m_tabMenus[(int)MenuTab.Favorites].bounds.X = this.xPositionOnScreen - (this.m_curTab == (int)MenuTab.Favorites ? 16 : 23);
-            m_tabMenus[(int)MenuTab.FavoritesExtras].bounds.X = this.xPositionOnScreen - (this.m_curTab == (int)MenuTab.FavoritesExtras ? 16 : 23);
-            m_tabMenus[(int)MenuTab.About].bounds.Y = this.yPositionOnScreen + (this.m_curTab == (int)MenuTab.About ? 43 : 33);
+            m_tabMenus[(int)MenuTab.Customise].bounds.Y = this.yPositionOnScreen - Game1.tileSize + (this.m_curTab == (int)MenuTab.Customise ? 34 : 24);
+            m_tabMenus[(int)MenuTab.ManageFavorites].bounds.Y = this.yPositionOnScreen - Game1.tileSize + (this.m_curTab == (int)MenuTab.Favorites || this.m_curTab == (int)MenuTab.FavoritesExtras ? 34 : 24);
+            m_tabMenus[(int)MenuTab.Favorites].bounds.X = this.xPositionOnScreen - (this.m_curTab == (int)MenuTab.Favorites ? 33 : 40);
+            m_tabMenus[(int)MenuTab.FavoritesExtras].bounds.X = this.xPositionOnScreen - (this.m_curTab == (int)MenuTab.FavoritesExtras ? 33 : 40);
+            m_tabMenus[(int)MenuTab.About].bounds.Y = this.yPositionOnScreen - Game1.tileSize + (this.m_curTab == (int)MenuTab.About ? 27 : 17);
         }
-
-        private bool IsCurTab(int tabIndex) {
+        /// <summary>Whether the tab shuold be shown on screen.</summary>
+        private bool IsVisibleTab(int tabIndex) {
             return (m_tabParents[tabIndex] < 0 || m_tabParents[tabIndex] == m_tabParents[m_curTab]);
         }
         /// <summary>Switch to the given tab.</summary>
         /// <param name="tab">The tab to display.</param>
         private void SetTab(int tab) {
-            if (this.m_curTab == tab)
+            if (this.m_curTab == tab) {
                 return;
+            }
             this.m_curTab = tab;
             m_tabs[tab].onSwitchBack();
             this.UpdateTabPositions();
         }
-
+        /// <summary>call on exit.</summary>
         private void exit() {
             for (int i = 0; i < m_tabs.Count; ++i) {
                 if (m_tabs[i]?.exitFunction != null) {
@@ -370,7 +349,9 @@ namespace Kisekae.Framework {
             }
             Game1.playSound("yoba");
 
-            Game1.options.zoomLevel = this.PlayerZoomLevel;
+            if (m_globalConfig.MenuZoomLock) {
+                Game1.options.zoomLevel = m_playerZoomLevel;
+            }
             Game1.overrideGameMenuReset = true;
             Game1.game1.refreshWindowSettings();
             Game1.player.canMove = true;

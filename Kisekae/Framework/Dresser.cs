@@ -31,17 +31,14 @@ namespace Kisekae.Framework {
         private int FarmHouseLevel = 0;
         /// <summary>Whether this is the first day since the player loaded their save.</summary>
         private bool m_isFirstDay = true;
-        /// <summary>Encapsulates the underlying mod texture management.</summary>
-        private ContentHelper m_contentHelper;
         /// <summary>The name for new dresser tile sheet.</summary>
         private const string s_tilesheetName = "z_dresser";
 
         /*********
         ** Public methods
         *********/
-        public Dresser(IMod env, ContentHelper helper) {
+        public Dresser(IMod env) {
             m_env = env;
-            m_contentHelper = helper;
         }
 
         public void init() {
@@ -67,8 +64,9 @@ namespace Kisekae.Framework {
         /// <param name="e">The event arguments.</param>
         private void Events_AfterDayStarted(object sender, EventArgs e) {
             FarmHouse farmhouse = (FarmHouse)Game1.getLocationFromName("FarmHouse");
-            if (m_isFirstDay || farmhouse.upgradeLevel != FarmHouseLevel) {
-                FarmHouseLevel = farmhouse.upgradeLevel;
+            if (m_isFirstDay || farmhouse.upgradeLevel != this.FarmHouseLevel) {
+                this.FarmHouseLevel = farmhouse.upgradeLevel;
+                this.PatchFarmhouseTilesheet(farmhouse);
                 this.PatchFarmhouseMap(farmhouse);
                 m_isFirstDay = false;
             }
@@ -85,7 +83,7 @@ namespace Kisekae.Framework {
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event arguments.</param>
         private void Events_AfterLoad(object sender, EventArgs e) {
-            PatchFarmhouseTilesheet((FarmHouse)Game1.getLocationFromName("FarmHouse"));
+            //PatchFarmhouseTilesheet((FarmHouse)Game1.getLocationFromName("FarmHouse"));
         }
 
         /// <summary>Patch the dresser into the farmhouse tilesheet.</summary>
@@ -163,8 +161,8 @@ namespace Kisekae.Framework {
                 new Tile(TileLayer.Buildings, position.X, position.Y + 1, 1, s_tilesheetName) // dresser bottom
             };
             foreach (Tile tile in tiles) {
-                Layer layer = farmhouse.map.GetLayer(tile.LayerName);
-                TileSheet tilesheet = farmhouse.map.GetTileSheet(tile.Tilesheet);
+                Layer layer = farmhouse.Map.GetLayer(tile.LayerName);
+                TileSheet tilesheet = farmhouse.Map.GetTileSheet(tile.Tilesheet);
 
                 if (layer.Tiles[tile.X, tile.Y] == null || layer.Tiles[tile.X, tile.Y].TileSheet.Id != tile.Tilesheet) {
                     /*

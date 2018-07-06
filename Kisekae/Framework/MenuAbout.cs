@@ -1,292 +1,241 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Kisekae.Config;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using StardewValley;
-using StardewValley.BellsAndWhistles;
-using StardewValley.Menus;
+using System.Collections.Generic;
+using System.Linq;
 using StardewModdingAPI;
-using Kisekae.Config;
+using StardewValley;
+using StardewValley.Menus;
+using Kisekae.Menu;
+using System;
 
 namespace Kisekae.Framework {
-    internal class MenuAbout : ITabMenu {
+    internal class MenuAbout : TabMenu {
         /*********
         ** Properties
         *********/
-        /// <summary>Global Mod Interface.</summary>
-        private readonly IMod m_env;
-        /// <summary>Encapsulates the underlying mod texture management.</summary>
-        private readonly ContentHelper ContentHelper;
         /// <summary>The global config settings.</summary>
-        private readonly GlobalConfig GlobalConfig;
+        private readonly GlobalConfig m_globalConfig;
+        /// <summary>Our local menu texture.</summary>
+        Texture2D m_menuTextures;
 
-        /// <summary>The 'set' button to change the hotkey.</summary>
-        private ClickableTextureComponent SetAccessKeyButton;
-        /// <summary>The 'set' button which toggles whether skirts are shown for male characters.</summary>
-        private ClickableTextureComponent ToggleMaleSkirtsButton;
-        /// <summary>The 'set' button which toggles whether gender can be changed.</summary>
-        private ClickableTextureComponent CanChangeGenderButton;
         /// <summary>The button which zooms out the menu.</summary>
-        private ClickableTextureComponent ZoomOutButton;
+        private ClickableTextureButton m_zoomOutButton;
         /// <summary>The button which zooms im the menu.</summary>
-        private ClickableTextureComponent ZoomInButton;
-        /// <summary>The button which reset global settings to their default.</summary>
-        private ClickableTextureComponent ResetConfigButton;
-        /// <summary>The messages to display on the screen.</summary>
-        private readonly List<Alert> Alerts = new List<Alert>();
+        private ClickableTextureButton m_zoomInButton;
+        /// <summary>The button which controls zoom lock.</summary>
+        private ClickableTextureButton m_zoomLockButton;
+        /// <summary>The label showing access key.</summary>
+        private LabelComponent m_accessKeyLabel;
+        /// <summary>The label showing number of bottoms.</summary>
+        private LabelComponent m_bottomNumberLabel;
+        /// <summary>The label showing zoom info.</summary>
+        private LabelComponent m_zoomLevelLabel;
+        /// <summary>The label showing whether show dresser.</summary>
+        private LabelComponent m_showDresserLabel;
 
         /// <summary>Whether the player is currently setting the menu key via <see cref="SetAccessKeyButton"/>.</summary>
-        private bool IsSettingAccessMenuKey;
-
-
+        private bool m_isSettingAccessMenuKey;
+        /// <summary>The zoom level before the menu was opened.</summary>
+        private float m_playerZoomLevel;
         /*********
         ** Public methods
         *********/
-        public MenuAbout(IMod env, ContentHelper contentHelper, GlobalConfig globalConfig) : base(
-                  x: Game1.viewport.Width / 2 - (680 + IClickableMenu.borderWidth * 2) / 2,
-                  y: Game1.viewport.Height / 2 - (500 + IClickableMenu.borderWidth * 2) / 2 - Game1.tileSize,
-                  width: 632 + IClickableMenu.borderWidth * 2,
-                  height: 500 + IClickableMenu.borderWidth * 4 + Game1.tileSize
+        public MenuAbout(IMod env, GlobalConfig globalConfig, ref float playerZoomLevel)
+            : base(env, 0, 0,
+                  width: 700 + s_borderSize,
+                  height: 580 + s_borderSize
             ) {
-            m_env = env;
-            this.ContentHelper = contentHelper;
-            this.GlobalConfig = globalConfig;
+            m_globalConfig = globalConfig;
+            m_playerZoomLevel = playerZoomLevel;
+            m_menuTextures = Game1.content.Load<Texture2D>(ContentHelper.s_MenuTextureKey);
             updateLayout();
         }
-
-        /// <summary>The method invoked when the player presses the left mouse button.</summary>
-        /// <param name="x">The X-position of the cursor.</param>
-        /// <param name="y">The Y-position of the cursor.</param>
-        /// <param name="playSound">Whether to enable sound.</param>
-        public override void receiveLeftClick(int x, int y, bool playSound = true) {
-            Texture2D menuTextures = this.ContentHelper.m_menuTextures;
-
-            // set access button
-            if (this.SetAccessKeyButton.containsPoint(x, y)) {
-                this.IsSettingAccessMenuKey = true;
-                Game1.playSound("breathin");
-                return;
-            }
-
-            // toggle male skirts button
-            if (this.ToggleMaleSkirtsButton.containsPoint(x, y)) {
-                this.GlobalConfig.HideMaleSkirts = !this.GlobalConfig.HideMaleSkirts;
-                m_env.Helper.WriteConfig(this.GlobalConfig);
-                this.Alerts.Add(new Alert(menuTextures, new Rectangle(this.GlobalConfig.HideMaleSkirts ? 48 : 80, 144, 16, 16), Game1.viewport.Width / 2 - (700 + IClickableMenu.borderWidth * 2) / 2, Game1.viewport.Height / 2 - (500 + IClickableMenu.borderWidth * 2) / 2, "Skirts " + (this.GlobalConfig.HideMaleSkirts ? "Hidden" : "Unhidden") + " for Males.", 1200, false));
-                Game1.playSound("coin");
-                return;
-            }
-
-            // can change gender button
-            if (this.CanChangeGenderButton.containsPoint(x, y)) {
-                this.GlobalConfig.CanChangeGender = !this.GlobalConfig.CanChangeGender;
-                m_env.Helper.WriteConfig(this.GlobalConfig);
-                this.Alerts.Add(new Alert(menuTextures, new Rectangle(!this.GlobalConfig.CanChangeGender ? 48 : 80, 144, 16, 16), Game1.viewport.Width / 2 - (700 + IClickableMenu.borderWidth * 2) / 2, Game1.viewport.Height / 2 - (500 + IClickableMenu.borderWidth * 2) / 2, (this.GlobalConfig.CanChangeGender ? "Enable" : "Disable") + " gender change.", 1200, false));
-                Game1.playSound("axe");
-                return;
-            }
-
-            // zoom in button
-            if (this.ZoomInButton.containsPoint(x, y) && this.GlobalConfig.MenuZoomOut) {
-                Game1.options.zoomLevel = 1f;
-                Game1.overrideGameMenuReset = true;
-                Game1.game1.refreshWindowSettings();
-
-                this.updateLayout();
-
-                this.GlobalConfig.MenuZoomOut = false;
-                m_env.Helper.WriteConfig(this.GlobalConfig);
-
-                this.ZoomInButton.sourceRect.Y = 177;
-                this.ZoomOutButton.sourceRect.Y = 167;
-
-                Game1.playSound("drumkit6");
-                this.Alerts.Add(new Alert(menuTextures, new Rectangle(80, 144, 16, 16), Game1.viewport.Width / 2 - (700 + IClickableMenu.borderWidth * 2) / 2, Game1.viewport.Height / 2 - (500 + IClickableMenu.borderWidth * 2) / 2, "Zoom Setting Changed.", 1200, false, 200));
-                return;
-            }
-
-            // zoom out button
-            if (this.ZoomOutButton.containsPoint(x, y) && !this.GlobalConfig.MenuZoomOut) {
-                Game1.options.zoomLevel = 0.75f;
-                Game1.overrideGameMenuReset = true;
-                Game1.game1.refreshWindowSettings();
-
-                this.updateLayout();
-
-                this.GlobalConfig.MenuZoomOut = true;
-                m_env.Helper.WriteConfig(this.GlobalConfig);
-
-                this.ZoomInButton.sourceRect.Y = 167;
-                this.ZoomOutButton.sourceRect.Y = 177;
-
-                Game1.playSound("coin");
-                this.Alerts.Add(new Alert(menuTextures, new Rectangle(80, 144, 16, 16), Game1.viewport.Width / 2 - (700 + IClickableMenu.borderWidth * 2) / 2, Game1.viewport.Height / 2 - (500 + IClickableMenu.borderWidth * 2) / 2, "Zoom Setting Changed.", 1200, false, 200));
-                return;
-            }
-
-            // reset config button
-            if (this.ResetConfigButton.containsPoint(x, y)) {
-                this.GlobalConfig.HideMaleSkirts = false;
-                this.GlobalConfig.MenuAccessKey = SButton.C;
-                Game1.options.zoomLevel = 1f;
-                Game1.overrideGameMenuReset = true;
-                Game1.game1.refreshWindowSettings();
-                this.updateLayout();
-                this.GlobalConfig.MenuZoomOut = false;
-                this.GlobalConfig.CanChangeGender = false;
-                m_env.Helper.WriteConfig(this.GlobalConfig);
-                this.Alerts.Add(new Alert(menuTextures, new Rectangle(160, 144, 16, 16), Game1.viewport.Width / 2 - (700 + IClickableMenu.borderWidth * 2) / 2, Game1.viewport.Height / 2 - (600 + IClickableMenu.borderWidth * 2) / 2 - Game1.tileSize, "Options Reset to Default", 1200, false, 200));
-                Game1.playSound("coin");
-            }
-        }
-
-        /// <summary>The method invoked when the player releases the left mouse button.</summary>
-        /// <param name="x">The X-position of the cursor.</param>
-        /// <param name="y">The Y-position of the cursor.</param>
-        public override void releaseLeftClick(int x, int y) { }
-
-        /// <summary>The method invoked when the player presses the left mouse button.</summary>
-        /// <param name="x">The X-position of the cursor.</param>
-        /// <param name="y">The Y-position of the cursor.</param>
-        /// <param name="playSound">Whether to enable sound.</param>
-        public override void receiveRightClick(int x, int y, bool playSound = true) { }
-
         /// <summary>The method invoked when the player presses a keyboard button.</summary>
         /// <param name="key">The key that was pressed.</param>
         public override void receiveKeyPress(Keys key) {
-            if (this.IsSettingAccessMenuKey) { // set key
-                this.GlobalConfig.MenuAccessKey = (SButton)key;
-                m_env.Helper.WriteConfig(this.GlobalConfig);
-                this.IsSettingAccessMenuKey = false;
-                this.Alerts.Add(new Alert(this.ContentHelper.m_menuTextures, new Rectangle(96, 144, 16, 16), Game1.viewport.Width / 2 - (700 + IClickableMenu.borderWidth * 2) / 2, Game1.viewport.Height / 2 - (500 + IClickableMenu.borderWidth * 2) / 2, "Menu Access Key Changed.", 1200, false));
+            if (m_isSettingAccessMenuKey) {
+                m_globalConfig.MenuAccessKey = (SButton)key;
+                m_env.Helper.WriteConfig(m_globalConfig);
+                m_isSettingAccessMenuKey = false;
+                m_alerts.Add(new Alert(m_menuTextures, new Rectangle(96, 144, 16, 16), Game1.viewport.Width / 2 - (700 + IClickableMenu.borderWidth * 2) / 2, Game1.viewport.Height / 2 - (500 + IClickableMenu.borderWidth * 2) / 2, "Menu Access Key Changed.", 1200, false));
+                m_accessKeyLabel.label = "Open Menu Key:  " + m_globalConfig.MenuAccessKey;
                 Game1.playSound("coin");
             }
         }
-
-        /// <summary>Update the menu state.</summary>
-        /// <param name="time">The elapsed game time.</param>
-        public override void update(GameTime time) {
-            base.update(time);
-            
-            // update alert messages
-            for (int i = this.Alerts.Count - 1; i >= 0; i--) {
-                if (this.Alerts.ElementAt(i).Update(time))
-                    this.Alerts.RemoveAt(i);
-            }
-        }
-
-        /// <summary>The method called when the game window changes size.</summary>
-        /// <param name="oldBounds">The former viewport.</param>
-        /// <param name="newBounds">The new viewport.</param>
-        public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds) {
-            base.gameWindowSizeChanged(oldBounds, newBounds);
-            this.updateLayout();
-        }
-
-        /// <summary>The method invoked when the cursor is over a given position.</summary>
-        /// <param name="x">The X mouse position.</param>
-        /// <param name="y">The Y mouse position.</param>
-        public override void performHoverAction(int x, int y) {
-            this.SetAccessKeyButton.tryHover(x, y, 0.25f);
-            this.SetAccessKeyButton.tryHover(x, y, 0.25f);
-
-            this.ToggleMaleSkirtsButton.tryHover(x, y, 0.25f);
-            this.ToggleMaleSkirtsButton.tryHover(x, y, 0.25f);
-
-            this.ResetConfigButton.tryHover(x, y, 0.25f);
-            this.ResetConfigButton.tryHover(x, y, 0.25f);
-
-            if (this.GlobalConfig.MenuZoomOut) {
-                this.ZoomInButton.tryHover(x, y, 0.25f);
-                this.ZoomInButton.tryHover(x, y, 0.25f);
-            } else {
-                this.ZoomOutButton.tryHover(x, y, 0.25f);
-                this.ZoomOutButton.tryHover(x, y, 0.25f);
-            }
-        }
-
         /// <summary>Draw the menu to the screen.</summary>
         /// <param name="spriteBatch">The sprite batch to which to draw.</param>
         public override void draw(SpriteBatch spriteBatch) {
-            //spriteBatch.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.4f);
-
-            // menu background
-            //Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width + 50, height, false, true);
-
-            // header
-            //SpriteText.drawString(spriteBatch, "About This Mod:", xPositionOnScreen + 55, yPositionOnScreen + 115);
-
-            // info
-            int yOffset = this.yPositionOnScreen + 100;
-            SpriteText.drawString(spriteBatch, "Kisekae", xPositionOnScreen + 55, yOffset);
-            //Utility.drawTextWithShadow(spriteBatch, "Kisekae", Game1.smallFont, new Vector2(xPositionOnScreen + 50, yOffset), Color.Black);
-            yOffset += 50;
-            Utility.drawTextWithShadow(spriteBatch, "A modified version of Get Dressed to work with SDV 1.3", Game1.smallFont, new Vector2(xPositionOnScreen + 50, yOffset), Color.Black);
-            Utility.drawTextWithShadow(spriteBatch, $"You are using version:  {m_env.ModManifest.Version}", Game1.smallFont, new Vector2(xPositionOnScreen + 50, yOffset + 40), Color.Black);
-            SpriteText.drawString(spriteBatch, "Settings:", xPositionOnScreen + 55, yOffset + 80);
-            Utility.drawTextWithShadow(spriteBatch, "Face Types (M-F): " + this.GlobalConfig.MaleFaceTypes + "-" + this.GlobalConfig.FemaleFaceTypes, Game1.smallFont, new Vector2(xPositionOnScreen + 50, yOffset + 150), Color.Black);
-            Utility.drawTextWithShadow(spriteBatch, "Nose Types (M-F): " + this.GlobalConfig.MaleNoseTypes + "-" + this.GlobalConfig.FemaleNoseTypes, Game1.smallFont, new Vector2(xPositionOnScreen + 400, yOffset + 150), Color.Black);
-            Utility.drawTextWithShadow(spriteBatch, "Bottoms Types (M-F): " + (this.GlobalConfig.HideMaleSkirts ? 2 : this.GlobalConfig.MaleBottomsTypes) + "-" + this.GlobalConfig.FemaleBottomsTypes, Game1.smallFont, new Vector2(xPositionOnScreen + 50, yOffset + 200), Color.Black);
-            Utility.drawTextWithShadow(spriteBatch, "Shoes Types (M-F): " + this.GlobalConfig.MaleShoeTypes + "-" + this.GlobalConfig.FemaleShoeTypes, Game1.smallFont, new Vector2(xPositionOnScreen + 400, yOffset + 200), Color.Black);
-            Utility.drawTextWithShadow(spriteBatch, "Show Dresser: " + this.GlobalConfig.ShowDresser, Game1.smallFont, new Vector2(xPositionOnScreen + 50, yOffset + 250), Color.Black);
-            Utility.drawTextWithShadow(spriteBatch, "Stove in Corner: " + this.GlobalConfig.StoveInCorner, Game1.smallFont, new Vector2(xPositionOnScreen + 400, yOffset + 250), Color.Black);
-            // set menu access key
-            Utility.drawTextWithShadow(spriteBatch, "Open Menu Key:  " + this.GlobalConfig.MenuAccessKey, Game1.smallFont, new Vector2(xPositionOnScreen + 50, yOffset + 300), Color.Black);
-            this.SetAccessKeyButton.draw(spriteBatch);
-            // toggle skirs for male characters
-            Utility.drawTextWithShadow(spriteBatch, "Toggle Skirts for Male Characters  ", Game1.smallFont, new Vector2(xPositionOnScreen + 50, yOffset + 350), Color.Black);
-            this.ToggleMaleSkirtsButton.draw(spriteBatch);
-            // set gender change
-            Utility.drawTextWithShadow(spriteBatch, "Can Change Gender ", Game1.smallFont, new Vector2(xPositionOnScreen + 50, yOffset + 400), Color.Black);
-            this.CanChangeGenderButton.draw(spriteBatch);
-            // set zoom level
-            Utility.drawTextWithShadow(spriteBatch, "Change Zoom Level  ", Game1.smallFont, new Vector2(xPositionOnScreen + 50, yOffset + 450), Color.Black);
-            this.ZoomOutButton.draw(spriteBatch);
-            this.ZoomInButton.draw(spriteBatch);
-            // reset config options
-            Utility.drawTextWithShadow(spriteBatch, "Reset Options to Default  ", Game1.smallFont, new Vector2(xPositionOnScreen + 50, yOffset + 500), Color.Black);
-            this.ResetConfigButton.draw(spriteBatch);
-
+            base.draw(spriteBatch);
             // set menu access key overlay
-            if (this.IsSettingAccessMenuKey) {
+            if (m_isSettingAccessMenuKey) {
                 spriteBatch.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.90f);
-                spriteBatch.DrawString(Game1.dialogueFont, "Press new key...", new Vector2(xPositionOnScreen + 225, yPositionOnScreen + 290), Color.White);
+                Vector2 strMeasure = Game1.dialogueFont.MeasureString("Press new key...");
+                spriteBatch.DrawString(Game1.dialogueFont, "Press new key...", new Vector2((Game1.viewport.Width - strMeasure.X) / 2, (Game1.viewport.Height - strMeasure.Y) / 2), Color.White); // xPositionOnScreen + 225, yPositionOnScreen + 280
             }
-
-            // alerts
-            foreach (Alert alert in this.Alerts) {
-                alert.Draw(spriteBatch, Game1.smallFont);
-            }
-
-            // cursor
-            spriteBatch.Draw(Game1.mouseCursors, new Vector2(Game1.getOldMouseX(), Game1.getOldMouseY()), Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 0, 16, 16), Color.White, 0f, Vector2.Zero, Game1.pixelZoom + Game1.dialogueButtonScale / 150f, SpriteEffects.None, 1f);
         }
-
         /// <summary>Update the menu layout for a change in the zoom level or viewport size.</summary>
         public override void updateLayout() {
             // reset window position
-            this.xPositionOnScreen = Game1.viewport.Width / 2 - (680 + IClickableMenu.borderWidth * 2) / 2;
-            this.yPositionOnScreen = Game1.viewport.Height / 2 - (500 + IClickableMenu.borderWidth * 2) / 2 - Game1.tileSize;
+            this.xPositionOnScreen = (Game1.viewport.Width - this.width) / 2;
+            this.yPositionOnScreen = (Game1.viewport.Height - this.height) / 2;
+            this.yPositionOnScreen += Game1.tileSize / 2;
 
-            Texture2D menuTextures = this.ContentHelper.m_menuTextures;
+            m_alerts.Clear();
+            m_components.Clear();
 
-            // about menu
-            this.SetAccessKeyButton = new ClickableTextureComponent(new Rectangle(this.xPositionOnScreen + 610, this.yPositionOnScreen + 450, Game1.pixelZoom * 15, Game1.pixelZoom * 10), Game1.mouseCursors, new Rectangle(294, 428, 21, 11), 3f);
-            this.ToggleMaleSkirtsButton = new ClickableTextureComponent(new Rectangle(this.xPositionOnScreen + 610, this.yPositionOnScreen + 500, Game1.pixelZoom * 15, Game1.pixelZoom * 10), Game1.mouseCursors, new Rectangle(294, 428, 21, 11), 3f);
-            this.CanChangeGenderButton = new ClickableTextureComponent(new Rectangle(this.xPositionOnScreen + 610, this.yPositionOnScreen + 550, Game1.pixelZoom * 15, Game1.pixelZoom * 10), Game1.mouseCursors, new Rectangle(294, 428, 21, 11), 3f);
-            this.ZoomOutButton = new ClickableTextureComponent(new Rectangle(this.xPositionOnScreen + 610, this.yPositionOnScreen + 600, Game1.pixelZoom * 10, Game1.pixelZoom * 10), menuTextures, new Rectangle(0, this.GlobalConfig.MenuZoomOut ? 177 : 167, 7, 9), 3f);
-            this.ZoomInButton = new ClickableTextureComponent(new Rectangle(this.xPositionOnScreen + 650, this.yPositionOnScreen + 600, Game1.pixelZoom * 10, Game1.pixelZoom * 10), menuTextures, new Rectangle(10, this.GlobalConfig.MenuZoomOut ? 167 : 177, 7, 9), 3f);
-            this.ResetConfigButton = new ClickableTextureComponent(new Rectangle(this.xPositionOnScreen + 610, this.yPositionOnScreen + 650, Game1.pixelZoom * 15, Game1.pixelZoom * 10), Game1.mouseCursors, new Rectangle(294, 428, 21, 11), 3f);
+            // info
+            int yOffset = this.yPositionOnScreen + IClickableMenu.borderWidth;
+            int xOffset = this.xPositionOnScreen + IClickableMenu.borderWidth;
+            m_components.Add(new LabelComponent(xOffset, yOffset, "Kisekae") { m_isTitle = true });
+            yOffset += 50;
+            m_components.Add(new LabelComponent(xOffset, yOffset, "A modified version of Get Dressed to work with SDV 1.3"));
+            m_components.Add(new LabelComponent(xOffset, yOffset + 26, $"You are using version:  {m_env.ModManifest.Version}"));
+            yOffset += 60;
+            m_components.Add(new LabelComponent(xOffset, yOffset, "Settings:") { m_isTitle = true });
+            m_components.Add(new LabelComponent(xOffset, yOffset + 60, "Face Types (M-F): " + m_globalConfig.MaleFaceTypes + "-" + m_globalConfig.FemaleFaceTypes));
+            m_components.Add(new LabelComponent(xOffset + 300, yOffset + 60, "Nose Types (M-F): " + m_globalConfig.MaleNoseTypes + "-" + m_globalConfig.FemaleNoseTypes));
+            m_components.Add(new LabelComponent(xOffset, yOffset + 110, "Shoes Types (M-F): " + m_globalConfig.MaleShoeTypes + "-" + m_globalConfig.FemaleShoeTypes));
+            m_bottomNumberLabel = new LabelComponent(xOffset + 300, yOffset + 110, "Bottoms Types (M-F): " + (m_globalConfig.HideMaleSkirts ? 2 : m_globalConfig.MaleBottomsTypes) + "-" + m_globalConfig.FemaleBottomsTypes);
+            m_components.Add(m_bottomNumberLabel);
+            m_components.Add(new LabelComponent(xOffset, yOffset + 160, "Stove in Corner: " + m_globalConfig.StoveInCorner));
+            m_showDresserLabel = new LabelComponent(xOffset + 300, yOffset + 160, "Show Dresser: " + m_globalConfig.ShowDresser);
+            m_components.Add(m_showDresserLabel);
+            m_components.Add(new ClickableTextureButton("SetDresser", new Rectangle(xOffset + 560, yOffset + 160, Game1.pixelZoom * 15, Game1.pixelZoom * 10), Game1.mouseCursors, new Rectangle(294, 428, 21, 11), 3f) { m_hoverScale = 0.25f });
+            // set menu access key
+            m_accessKeyLabel = new LabelComponent(xOffset, yOffset + 210, "Open Menu Key: " + m_globalConfig.MenuAccessKey);
+            m_components.Add(m_accessKeyLabel);
+            m_components.Add(new ClickableTextureButton("ClearAccessKey", new Rectangle(xOffset + 510, yOffset + 208, 30, 30), m_menuTextures, new Rectangle(50, 146, 12, 12), 3f) { m_hoverScale = 0.25f });
+            m_components.Add(new ClickableTextureButton("SetAccessKey", new Rectangle(xOffset + 560, yOffset + 210, 21 * 3, 11 * 3), Game1.mouseCursors, new Rectangle(294, 428, 21, 11), 3f) { m_hoverScale = 0.25f });
+            // toggle skirs for male characters
+            m_components.Add(new LabelComponent(xOffset, yOffset + 260, "Toggle Skirts for Male Characters"));
+            m_components.Add(new ClickableTextureButton("SetMaleShirt", new Rectangle(xOffset + 560, yOffset + 260, Game1.pixelZoom * 15, Game1.pixelZoom * 10), Game1.mouseCursors, new Rectangle(294, 428, 21, 11), 3f) { m_hoverScale = 0.25f });
+            // set gender change
+            m_components.Add(new LabelComponent(xOffset, yOffset + 310, "Can Change Gender"));
+            m_components.Add(new ClickableTextureButton("SetGenderButton", new Rectangle(xOffset + 560, yOffset + 310, Game1.pixelZoom * 15, Game1.pixelZoom * 10), Game1.mouseCursors, new Rectangle(294, 428, 21, 11), 3f) { m_hoverScale = 0.25f });
+            // set zoom level
+            int zoomValue = (int)Math.Round((double)Game1.options.zoomLevel * 100.0);
+            bool canZoomOut = (m_globalConfig.MenuZoomLock && !m_globalConfig.MenuZoomOut) || (!m_globalConfig.MenuZoomLock && zoomValue > 75);
+            bool canZoomIn = (m_globalConfig.MenuZoomLock && m_globalConfig.MenuZoomOut) || (!m_globalConfig.MenuZoomLock && zoomValue < 125);
+            m_zoomLevelLabel = new LabelComponent(xOffset, yOffset + 360, (m_globalConfig.MenuZoomLock ? "Independent Zoom Level: ": "Game Zoom Level: ")+(zoomValue) +"%");
+            m_components.Add(m_zoomLevelLabel);
+            m_zoomOutButton = new ClickableTextureButton("ZoomOut", new Rectangle(xOffset + 530, yOffset + 360, Game1.pixelZoom * 10, Game1.pixelZoom * 10), m_menuTextures, new Rectangle(0, canZoomOut ? 167 : 177, 7, 9), 3f) { m_hoverScale = canZoomOut ? 0.25f : 0f };
+            m_zoomLockButton = new ClickableTextureButton("ZoomLock", new Rectangle(xOffset + 575, yOffset + 360 - 4, (int)(12*2.5), (int)(14*2.5)), m_menuTextures, new Rectangle(m_globalConfig.MenuZoomLock ? 178:162, m_globalConfig.MenuZoomLock ? 145 : 161, 12, 14), 2.5f) { m_hoverScale = 0.25f };
+            m_zoomInButton = new ClickableTextureButton("ZoomIn", new Rectangle(xOffset + 630, yOffset + 360, Game1.pixelZoom * 10, Game1.pixelZoom * 10), m_menuTextures, new Rectangle(10, canZoomIn ? 167 : 177, 7, 9), 3f) { m_hoverScale = canZoomIn ? 0.25f : 0f };
+            m_components.Add(m_zoomOutButton);
+            m_components.Add(m_zoomInButton);
+            m_components.Add(m_zoomLockButton);
+            // reset config options
+            m_components.Add(new LabelComponent(xOffset, yOffset + 410, "Reset Options to Default"));
+            m_components.Add(new ClickableTextureButton("Reset", new Rectangle(xOffset + 560, yOffset + 410, Game1.pixelZoom * 15, Game1.pixelZoom * 10), Game1.mouseCursors, new Rectangle(294, 428, 21, 11), 3f) { m_hoverScale = 0.25f });
         }
+        /// <summary>Perform the action associated with a component.</summary>
+        /// <param name="cpt">The component.</param>
+        /// <return>whether the component action is processed</return>
+        public override bool handleLeftClick(IAutoComponent cpt) {
+            switch (cpt.m_name) {
+                case "SetDresser":
+                    m_globalConfig.ShowDresser = !m_globalConfig.ShowDresser;
+                    this.m_showDresserLabel.label = "Show Dresser: " + m_globalConfig.ShowDresser;
+                    m_alerts.Add(new Alert(m_menuTextures, new Rectangle(m_globalConfig.ShowDresser ? 80 : 48, 144, 16, 16), Game1.viewport.Width / 2 - (700 + IClickableMenu.borderWidth * 2) / 2, Game1.viewport.Height / 2 - (500 + IClickableMenu.borderWidth * 2) / 2, "Restart game required.", 1200, false));
+                    m_env.Helper.WriteConfig(m_globalConfig);
+                    Game1.playSound("coin");
+                    return true;
+                case "ClearAccessKey":
+                    m_globalConfig.MenuAccessKey = SButton.None;
+                    m_accessKeyLabel.label = "Open Menu Key:  " + m_globalConfig.MenuAccessKey;
+                    m_env.Helper.WriteConfig(m_globalConfig);
+                    m_alerts.Add(new Alert(m_menuTextures, new Rectangle(96, 144, 16, 16), Game1.viewport.Width / 2 - (700 + IClickableMenu.borderWidth * 2) / 2, Game1.viewport.Height / 2 - (500 + IClickableMenu.borderWidth * 2) / 2, "Menu Access Key Cleared.", 1200, false));
+                    Game1.playSound("breathin");
+                    return true;
+                case "SetAccessKey":
+                    m_isSettingAccessMenuKey = true;
+                    m_env.Helper.WriteConfig(m_globalConfig);
+                    Game1.playSound("breathin");
+                    return true;
+                case "SetMaleShirt":
+                    m_globalConfig.HideMaleSkirts = !m_globalConfig.HideMaleSkirts;
+                    m_bottomNumberLabel.label = "Bottoms Types (M-F): " + (m_globalConfig.HideMaleSkirts ? 2 : m_globalConfig.MaleBottomsTypes) + "-" + m_globalConfig.FemaleBottomsTypes;
+                    m_env.Helper.WriteConfig(m_globalConfig);
+                    m_alerts.Add(new Alert(m_menuTextures, new Rectangle(m_globalConfig.HideMaleSkirts ? 48 : 80, 144, 16, 16), Game1.viewport.Width / 2 - (700 + IClickableMenu.borderWidth * 2) / 2, Game1.viewport.Height / 2 - (500 + IClickableMenu.borderWidth * 2) / 2, "Skirts " + (m_globalConfig.HideMaleSkirts ? "Hidden" : "Unhidden") + " for Males.", 1200, false));
+                    Game1.playSound("coin");
+                    FarmerMakeup.MaleBottomsTypes = m_globalConfig.HideMaleSkirts ? 2 : m_globalConfig.MaleBottomsTypes;
+                    return true;
+                case "SetGenderButton":
+                    m_globalConfig.CanChangeGender = !m_globalConfig.CanChangeGender;
+                    m_env.Helper.WriteConfig(m_globalConfig);
+                    m_alerts.Add(new Alert(m_menuTextures, new Rectangle(!m_globalConfig.CanChangeGender ? 48 : 80, 144, 16, 16), Game1.viewport.Width / 2 - (700 + IClickableMenu.borderWidth * 2) / 2, Game1.viewport.Height / 2 - (500 + IClickableMenu.borderWidth * 2) / 2, (m_globalConfig.CanChangeGender ? "Enable" : "Disable") + " gender change.", 1200, false));
+                    Game1.playSound("axe");
+                    return true;
+                case "ZoomLock":
+                    m_globalConfig.MenuZoomLock = !m_globalConfig.MenuZoomLock;
+                    if (m_globalConfig.MenuZoomLock) {
+                        m_playerZoomLevel = Game1.options.zoomLevel;
+                        Game1.options.zoomLevel = m_globalConfig.MenuZoomOut? 0.75f : 1f;
+                    } else {
+                        Game1.options.zoomLevel = m_playerZoomLevel;
+                    }
+                    Game1.overrideGameMenuReset = true;
+                    Game1.game1.refreshWindowSettings();
+                    m_env.Helper.WriteConfig(m_globalConfig);
+                    Game1.playSound("coin");
+                    return true;
+                case "ZoomOut":
+                    if (m_globalConfig.MenuZoomLock) {
+                        if (m_globalConfig.MenuZoomOut) {
+                            return false;
+                        }
+                        Game1.options.zoomLevel = 0.75f;
+                        Game1.overrideGameMenuReset = true;
+                        Game1.game1.refreshWindowSettings();
 
-        public override void onSwitchBack() {
-            this.Alerts.Clear();
+                        m_globalConfig.MenuZoomOut = true;
+                        m_env.Helper.WriteConfig(m_globalConfig);
+                        Game1.playSound("coin");
+                        m_alerts.Add(new Alert(m_menuTextures, new Rectangle(80, 144, 16, 16), Game1.viewport.Width / 2 - (700 + IClickableMenu.borderWidth * 2) / 2, Game1.viewport.Height / 2 - (500 + IClickableMenu.borderWidth * 2) / 2, "Zoom Setting Changed.", 1200, false, 200));
+                    } else if (Game1.options.zoomLevel > 0.77) {
+                        Game1.options.zoomLevel -= 0.05f;
+                        Game1.overrideGameMenuReset = true;
+                        Game1.game1.refreshWindowSettings();
+                    }
+                    return true;
+                case "ZoomIn":
+                    if (m_globalConfig.MenuZoomLock) {
+                        if (!m_globalConfig.MenuZoomOut) {
+                            return false;
+                        }
+                        Game1.options.zoomLevel = 1f;
+                        Game1.overrideGameMenuReset = true;
+                        Game1.game1.refreshWindowSettings();
 
-            base.onSwitchBack();
+                        m_globalConfig.MenuZoomOut = false;
+                        m_env.Helper.WriteConfig(m_globalConfig);
+                        Game1.playSound("drumkit6");
+                        m_alerts.Add(new Alert(m_menuTextures, new Rectangle(80, 144, 16, 16), Game1.viewport.Width / 2 - (700 + IClickableMenu.borderWidth * 2) / 2, Game1.viewport.Height / 2 - (500 + IClickableMenu.borderWidth * 2) / 2, "Zoom Setting Changed.", 1200, false, 200));
+                    } else if (Game1.options.zoomLevel <1.23) {
+                        Game1.options.zoomLevel += 0.05f;
+                        Game1.overrideGameMenuReset = true;
+                        Game1.game1.refreshWindowSettings();
+                    }
+                    return true;
+                case "Reset":
+                    m_globalConfig.HideMaleSkirts = false;
+                    m_globalConfig.MenuAccessKey = SButton.C;
+                    m_globalConfig.MenuZoomOut = false;
+                    m_globalConfig.CanChangeGender = false;
+                    m_globalConfig.ShowDresser = true;
+                    m_env.Helper.WriteConfig(m_globalConfig);
+                    Game1.options.zoomLevel = 1f;
+                    Game1.overrideGameMenuReset = true;
+                    Game1.game1.refreshWindowSettings();
+                    updateLayout();
+                    m_alerts.Add(new Alert(m_menuTextures, new Rectangle(160, 144, 16, 16), Game1.viewport.Width / 2 - (700 + IClickableMenu.borderWidth * 2) / 2, Game1.viewport.Height / 2 - (500 + IClickableMenu.borderWidth * 2) / 2, "Options Reset to Default", 1200, false, 200));
+                    Game1.playSound("coin");
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 }

@@ -15,21 +15,27 @@ namespace Kisekae.Framework {
         /*********
         ** Properties
         *********/
+        /// <summary>Key for local menu texture.</summary>
+        public const string s_MenuTextureKey = "menuTextures";
+
         /// <summary>Provides mod API.</summary>
         private readonly IMod m_env;
         /// <summary>Base texture.</summary>
         private readonly Texture2D m_femaleBaseTexture = null;
         private readonly Texture2D m_maleBaseTexture = null;
         /// <summary>The spritesheet used to draw the player customisation menu.</summary>
-        public Texture2D m_menuTextures { get; }
+        private Texture2D m_menuTextures;
         /// <summary>The texture heights of shoes in the female overrides.</summary>
         private static readonly int[] m_femaleShoeSpriteHeights = new int[21] { 15, 16, 14, 13, 12, 16, 16, 15, 16, 10, 13, 13, 13, 14, 14, 11, 14, 14, 14, 16, 13 };
         /// <summary>The texture heights of shoes in the male overrides.</summary>
         private static readonly int[] s_maleShoeSpriteHeights = new int[21] { 11, 16, 15, 14, 13, 16, 16, 14, 16, 12, 14, 14, 15, 15, 16, 13, 15, 16, 16, 16, 15 };
-
-        private int[] m_nExt = new int[] { 0,0,0,0 };
-        private const string s_assetPath = "overrides";
+        /// <summary>Texture cache.</summary>
         private Dictionary<string, Texture2D> m_textureCache = new Dictionary<string, Texture2D>();
+        /// <summary>Number of detected extended base texture</summary>
+        private int[] m_nExt = new int[] { 0,0,0,0 };
+        /// <summary>Relative path to texture</summary>
+        private const string s_assetPath = "overrides";
+
         /*********
         ** Public methods
         *********/
@@ -53,12 +59,13 @@ namespace Kisekae.Framework {
             } catch {
                 m_env.Monitor.Log("Could not find base file.", LogLevel.Error);
             }
+            //TODO: add base texture number limit detect
         }
 
         /// <summary>Get whether this instance can load the initial version of the given asset.</summary>
         /// <param name="asset">Basic metadata about the asset being loaded.</param>
         public bool CanLoad<T>(IAssetInfo asset) {
-            if (asset.AssetNameEquals("menuTextures")) {
+            if (asset.AssetNameEquals(s_MenuTextureKey)) {
                 return true;
             } else if (asset.AssetNameEquals(Path.Combine("Characters", "Farmer", "accessories"))) {
                 return true;
@@ -71,7 +78,7 @@ namespace Kisekae.Framework {
         /// <summary>Load a matched asset.</summary>
         /// <param name="asset">Basic metadata about the asset being loaded.</param>
         public T Load<T>(IAssetInfo asset) {
-            if (asset.AssetNameEquals("menuTextures")) {
+            if (asset.AssetNameEquals(s_MenuTextureKey)) {
                 return (T)(object)m_menuTextures;
             } else if (asset.AssetNameEquals(Path.Combine("Characters", "Farmer", "accessories"))) {
                 return m_env.Helper.Content.Load<T>("overrides/accessories");
@@ -85,7 +92,7 @@ namespace Kisekae.Framework {
                     int n;
                     if (!int.TryParse(par[i], out n)) {
                         n = 0;
-                    } else if (n<0 || n>=GetNumberOfTexture(LocalConfig.Attributes.Face + i - 2)) {
+                    } else if (n<0 || n>=GetNumberOfTexture(LocalConfig.Attribute.Face + i - 2)) {
                         n = 0;
                     }
                     config[i-2] = n;
@@ -171,38 +178,39 @@ namespace Kisekae.Framework {
         }
 
         /// <summary>Get number of attribute texture.</summary>
-        public int GetNumberOfTexture(LocalConfig.Attributes attr) {
+        public int GetNumberOfTexture(LocalConfig.Attribute attr) {
             Texture2D texture;
             switch (attr) {
-                case LocalConfig.Attributes.Skin:
+                case LocalConfig.Attribute.Skin:
                     texture = Game1.content.Load<Texture2D>(Path.Combine("Characters", "Farmer", "skinColors"));
                     return texture.Height;
-                case LocalConfig.Attributes.Hair:
+                case LocalConfig.Attribute.Hair:
                     texture = FarmerRenderer.hairStylesTexture;
                     return (texture.Height / (32*3)) * (texture.Width / 16);
-                case LocalConfig.Attributes.Shirt:
+                case LocalConfig.Attribute.Shirt:
                     texture = FarmerRenderer.shirtsTexture;
                     return (texture.Height / (8*4)) * (texture.Width / 8);
-                case LocalConfig.Attributes.Accessory:
+                case LocalConfig.Attribute.Accessory:
                     texture = FarmerRenderer.accessoriesTexture;
                     return (texture.Height / (16*2)) * (texture.Width / 16);
-                case LocalConfig.Attributes.EyeColor:
+                case LocalConfig.Attribute.EyeColor:
                     return 1 << 6;
-                case LocalConfig.Attributes.HairColor:
+                case LocalConfig.Attribute.HairColor:
                     return 1 << 6;
-                case LocalConfig.Attributes.BottomsColor:
+                case LocalConfig.Attribute.BottomsColor:
                     return 1 << 6;
-                case LocalConfig.Attributes.Face:
-                    return 2;
-                case LocalConfig.Attributes.Nose:
-                    return 3;
-                case LocalConfig.Attributes.Bottoms:
-                    return 12;
-                case LocalConfig.Attributes.Shoes:
-                    return 4;
-                case LocalConfig.Attributes.ShoeColor:
+                case LocalConfig.Attribute.ShoeColor:
                     texture = Game1.content.Load<Texture2D>(Path.Combine("Characters", "Farmer", "shoeColors"));
                     return texture.Height;
+                // TODO: change to base texture number limit
+                case LocalConfig.Attribute.Face:
+                    return 2;
+                case LocalConfig.Attribute.Nose:
+                    return 3;
+                case LocalConfig.Attribute.Bottoms:
+                    return 12;
+                case LocalConfig.Attribute.Shoes:
+                    return 4;
                 default:
                     return 0;
             }

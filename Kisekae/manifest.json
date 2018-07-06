@@ -3,8 +3,8 @@
   "Author": "Kabigon",
   "Version": {
     "MajorVersion": 2,
-    "MinorVersion": 0,
-    "PatchVersion": 0,
+    "MinorVersion": 1,
+    "PatchVersion": 1,
     "Build": "beta"
   },
   "MinimumApiVersion": "2.0",

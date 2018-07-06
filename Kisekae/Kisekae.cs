@@ -41,12 +41,10 @@ namespace Kisekae {
         public override void Entry(IModHelper helper) {
             // load settings
             m_globalConfig = helper.ReadConfig<GlobalConfig>();
-
             // check if the mod should be enalbed
             if (!m_globalConfig.IsEnable) {
                 return;
             }
-
             // initialize components
             LocalConfig.s_env = this;
             m_contentHelper = new ContentHelper(this);
@@ -61,7 +59,7 @@ namespace Kisekae {
             FarmerMakeup.HideMaleSkirts = m_globalConfig.HideMaleSkirts;
             m_farmerPatcher = new FarmerMakeup(this, m_contentHelper);
 
-            m_dresser = new Dresser(this, m_contentHelper);
+            m_dresser = new Dresser(this);
             m_dresser.m_isVisible = m_globalConfig.ShowDresser;
             m_dresser.m_stoveInCorner = m_globalConfig.StoveInCorner;
             m_dresser.init();
@@ -134,7 +132,7 @@ namespace Kisekae {
 
             // open menu
             Game1.playSound("bigDeSelect");
-            Game1.activeClickableMenu = new MenuFarmerMakeup(this, m_contentHelper, m_globalConfig, m_playerConfig);
+            OpenMenu();
             e.SuppressButton();
         }
 
@@ -144,15 +142,15 @@ namespace Kisekae {
                 return;
             }
             if (Game1.player.Money >= 500) {
-                Game1.activeClickableMenu = new MenuFarmerMakeup(this, m_contentHelper, m_globalConfig, m_playerConfig);
+                OpenMenu();
                 Game1.player.Money -= 500;
                 try {
                     IReflectedField<Multiplayer> multiplayer = Helper.Reflection.GetField<Multiplayer>(typeof(Game1), "multiplayer");
                     multiplayer.GetValue()?.globalChatInfoMessage("Makeover", Game1.player.Name);
                 } catch { }
-                return;
+            } else {
+                Game1.drawObjectDialogue(Game1.content.LoadString("Strings\\UI:NotEnoughMoney2"));
             }
-            Game1.drawObjectDialogue(Game1.content.LoadString("Strings\\UI:NotEnoughMoney2"));
         }
 
         /// <summary>Patch player after load.</summary>
@@ -165,6 +163,13 @@ namespace Kisekae {
             m_farmerPatcher.m_farmer = Game1.player;
             m_farmerPatcher.m_config = m_playerConfig;
             m_farmerPatcher.ApplyConfig();
+        }
+
+        /// <summary>Open custimization menu.</summary>
+        private void OpenMenu() {
+            m_farmerPatcher.m_farmer = Game1.player;
+            m_farmerPatcher.m_config = m_playerConfig;
+            Game1.activeClickableMenu = new MenuFarmerMakeup(this, m_farmerPatcher, m_globalConfig);
         }
     }
 }

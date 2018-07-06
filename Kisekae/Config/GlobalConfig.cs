@@ -50,6 +50,9 @@ namespace Kisekae.Config
         /// <summary>Whether to temporarily zoom out when showing the menu.</summary>
         public bool MenuZoomOut { get; set; } = false;
 
+        /// <summary>Whether to use temporary zoom.</summary>
+        public bool MenuZoomLock { get; set; } = true;
+
         /// <summary>Whether gender can be changed.</summary>
         public bool CanChangeGender { get; set; } = false;
     }

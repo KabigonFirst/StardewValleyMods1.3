@@ -37,7 +37,7 @@ namespace Kisekae.Config
         /****
         ** Settings
         ****/
-        public enum Attributes{
+        public enum Attribute{
             Skin = 0,
             Hair,
             Shirt,
@@ -83,31 +83,31 @@ namespace Kisekae.Config
         ** Public functions
         ****/
         /// <summary>Unified int attribute getter.</summary>
-        public int GetIntAttribute(Attributes attr, int which = 0) {
+        public int GetIntAttribute(Attribute attr, int which = 0) {
             switch (attr) {
-                case Attributes.Skin:
+                case Attribute.Skin:
                     return ChosenSkin[which];
-                case Attributes.Hair:
+                case Attribute.Hair:
                     return ChosenHairstyle[which];
-                case Attributes.Shirt:
+                case Attribute.Shirt:
                     return ChosenShirt[which];
-                case Attributes.Accessory:
+                case Attribute.Accessory:
                     return ChosenAccessory[which];
-                case Attributes.EyeColor:
+                case Attribute.EyeColor:
                     return (int)ChosenEyeColor[which];
-                case Attributes.HairColor:
+                case Attribute.HairColor:
                     return (int)ChosenHairColor[which];
-                case Attributes.BottomsColor:
+                case Attribute.BottomsColor:
                     return (int)ChosenBottomsColor[which];
-                case Attributes.Face:
+                case Attribute.Face:
                     return ChosenFace[which];
-                case Attributes.Nose:
+                case Attribute.Nose:
                     return ChosenNose[which];
-                case Attributes.Bottoms:
+                case Attribute.Bottoms:
                     return ChosenBottoms[which];
-                case Attributes.Shoes:
+                case Attribute.Shoes:
                     return ChosenShoes[which];
-                case Attributes.ShoeColor:
+                case Attribute.ShoeColor:
                     return ChosenShoeColor[which];
                 default:
                     return 0;
@@ -115,31 +115,31 @@ namespace Kisekae.Config
         }
 
         /// <summary>Unified uint attribute getter.</summary>
-        public uint GetUintAttribute(Attributes attr, int which = 0) {
+        public uint GetUintAttribute(Attribute attr, int which = 0) {
             switch (attr) {
-                case Attributes.Skin:
+                case Attribute.Skin:
                     return (uint)ChosenSkin[which];
-                case Attributes.Hair:
+                case Attribute.Hair:
                     return (uint)ChosenHairstyle[which];
-                case Attributes.Shirt:
+                case Attribute.Shirt:
                     return (uint)ChosenShirt[which];
-                case Attributes.Accessory:
+                case Attribute.Accessory:
                     return (uint)ChosenAccessory[which];
-                case Attributes.EyeColor:
+                case Attribute.EyeColor:
                     return ChosenEyeColor[which];
-                case Attributes.HairColor:
+                case Attribute.HairColor:
                     return ChosenHairColor[which];
-                case Attributes.BottomsColor:
+                case Attribute.BottomsColor:
                     return ChosenBottomsColor[which];
-                case Attributes.Face:
+                case Attribute.Face:
                     return (uint)ChosenFace[which];
-                case Attributes.Nose:
+                case Attribute.Nose:
                     return (uint)ChosenNose[which];
-                case Attributes.Bottoms:
+                case Attribute.Bottoms:
                     return (uint)ChosenBottoms[which];
-                case Attributes.Shoes:
+                case Attribute.Shoes:
                     return (uint)ChosenShoes[which];
-                case Attributes.ShoeColor:
+                case Attribute.ShoeColor:
                     return (uint)ChosenShoeColor[which];
                 default:
                     return 0;
@@ -163,10 +163,10 @@ namespace Kisekae.Config
                 return;
             }
             if (SaveName != null) {
-                s_env.Monitor.Log("Save a config:"+ Path.Combine("psconfigs", $"{SaveName}.json"));
+                //s_env.Monitor.Log("Save a config:"+ Path.Combine("psconfigs", $"{SaveName}.json"));
                 s_env.Helper.WriteJsonFile(Path.Combine("psconfigs", $"{SaveName}.json"), this);
             } else if (s_perSaveConfigPath != null) {
-                s_env.Monitor.Log("Save the config:"+ s_perSaveConfigPath);
+                //s_env.Monitor.Log("Save the config:"+ s_perSaveConfigPath);
                 s_env.Helper.WriteJsonFile(s_perSaveConfigPath, this);
             }
         }

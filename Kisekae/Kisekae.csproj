@@ -47,8 +47,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Framework\Alert.cs" />
-    <Compile Include="Framework\ITabMenu.cs" />
+    <Compile Include="Menu\AutoColorPicker.cs" />
+    <Compile Include="Menu\IAutoComponent.cs" />
+    <Compile Include="Menu\IHoverable.cs" />
+    <Compile Include="Menu\LabelComponent.cs" />
+    <Compile Include="Menu\PortraitComponent.cs" />
+    <Compile Include="Menu\Alert.cs" />
+    <Compile Include="Menu\ClickableTextureButton.cs" />
+    <Compile Include="Menu\AutoMenu.cs" />
+    <Compile Include="Menu\TabMenu.cs" />
     <Compile Include="Framework\MenuCustomize.cs" />
     <Compile Include="Framework\MenuFarmerMakeup.cs" />
     <Compile Include="Framework\ContentHelper.cs" />

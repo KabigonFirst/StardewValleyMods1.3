@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewValley;
 
-namespace Kisekae.Framework {
+namespace Kisekae.Menu {
     /// <summary>Displays a message on the screen.</summary>
     public class Alert {
         /*********
@@ -11,28 +11,20 @@ namespace Kisekae.Framework {
         *********/
         /// <summary>The X position from which to draw the alert.</summary>
         private readonly int X;
-
         /// <summary>The Y position from which to draw the alert.</summary>
         private readonly int Y;
-
         /// <summary>The message text to display.</summary>
         private readonly string Text;
-
         /// <summary>Whether the alert should appear with a fade-in effect.</summary>
         private readonly bool FadeIn;
-
         /// <summary>The icon texture (if any).</summary>
         private readonly Texture2D Texture;
-
         /// <summary>The icon sprite within the <see cref="Texture"/> (if applicable).</summary>
         private readonly Rectangle SourceRect = Rectangle.Empty;
-
         /// <summary>The delay until the alert should appear.</summary>
         private float DelayTimeLeft;
-
         /// <summary>The time left until the message should disappear.</summary>
         private float TimeLeft;
-
         /// <summary>The alert transparency.</summary>
         private float Transparency = 1f;
 

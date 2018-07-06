@@ -9,7 +9,6 @@ using SFarmer = StardewValley.Farmer;
 using StardewModdingAPI;
 using Kisekae.Config;
 using System.IO;
-using LAttributes = Kisekae.Config.LocalConfig.Attributes;
 
 namespace Kisekae.Framework {
     class FarmerMakeup {
@@ -53,7 +52,7 @@ namespace Kisekae.Framework {
         /// <returns>Returns whether the config was just initilized(i.e. first run).</returns>
         public bool UpdateCurConfig() {
             if (m_config.FirstRun) {
-                m_env.Monitor.Log("First run:" + m_config.SaveName);
+                m_env.Monitor.Log("First run:" + m_config.SaveName, LogLevel.Info);
                 m_config.ChosenSkin[0] = m_farmer.skin;
                 m_config.ChosenHairstyle[0] = m_farmer.hair;
                 m_config.ChosenShirt[0] = m_farmer.shirt;
@@ -67,7 +66,7 @@ namespace Kisekae.Framework {
                 return true;
             }
             if (m_config.IsCurConfigOldVersion()) {
-                m_env.Monitor.Log("Update old config:"+m_config.SaveName);
+                m_env.Monitor.Log("Update old config:"+m_config.SaveName, LogLevel.Info);
                 m_config.ChosenSkin[0] = m_farmer.skin;
                 m_config.ChosenHairstyle[0] = m_farmer.hair;
                 m_config.ChosenShirt[0] = m_farmer.shirt;
@@ -113,22 +112,14 @@ namespace Kisekae.Framework {
             ChangeNose(m_config.ChosenNose[which]);
             ChangeBottoms(m_config.ChosenBottoms[which]);
             ChangeShoes(m_config.ChosenShoes[which]);
-
-            m_config.ChosenSkin[0] = m_config.ChosenSkin[which];
-            m_config.ChosenHairstyle[0] = m_config.ChosenHairstyle[which];
-            m_config.ChosenShirt[0] = m_config.ChosenShirt[which];
-            m_config.ChosenAccessory[0] = m_config.ChosenAccessory[which];
-            m_config.ChosenHairColor[0] = m_config.ChosenHairColor[which];
-            m_config.ChosenEyeColor[0] = m_config.ChosenEyeColor[which];
-            m_config.ChosenBottomsColor[0] = m_config.ChosenBottomsColor[which];
             */
             m_config.ChosenFace[0] = m_config.ChosenFace[which];
             m_config.ChosenNose[0] = m_config.ChosenNose[which];
             m_config.ChosenBottoms[0] = m_config.ChosenBottoms[which];
             m_config.ChosenShoes[0] = m_config.ChosenShoes[which];
-            m_config.ChosenShoeColor[0] = m_config.ChosenShoeColor[which];
             FixBase(true);
 
+            ChangeShoeColor(m_config.ChosenShoeColor[which]);
             ChangeSkinColor(m_config.ChosenSkin[which]);
             ChangeHairStyle(m_config.ChosenHairstyle[which]);
             ChangeShirt(m_config.ChosenShirt[which]);
@@ -173,7 +164,7 @@ namespace Kisekae.Framework {
         /// <param name="noPatch">Whether to skip patching the farmer textures.</param>
         /// <param name="which">Which configure to change.</param>
         public void ChangeSkinColor(int index, bool noPatch = false, int which = 0) {
-            int n = m_contentHelper.GetNumberOfTexture(LocalConfig.Attributes.Skin);
+            int n = m_contentHelper.GetNumberOfTexture(LocalConfig.Attribute.Skin);
             if (index < 0) {
                 index = n - 1;
             } else if (index >= n) {
@@ -191,7 +182,7 @@ namespace Kisekae.Framework {
         /// <param name="noPatch">Whether to skip patching the farmer textures.</param>
         /// <param name="which">Which configure to change.</param>
         public void ChangeHairStyle(int index, bool noPatch = false, int which = 0) {
-            int n = m_contentHelper.GetNumberOfTexture(LocalConfig.Attributes.Hair);
+            int n = m_contentHelper.GetNumberOfTexture(LocalConfig.Attribute.Hair);
             if (index < 0) {
                 index = n - 1;
             } else if (index >= n) {
@@ -209,7 +200,7 @@ namespace Kisekae.Framework {
         /// <param name="noPatch">Whether to skip patching the farmer textures.</param>
         /// <param name="which">Which configure to change.</param>
         public void ChangeShirt(int index, bool noPatch = false, int which = 0) {
-            int n = m_contentHelper.GetNumberOfTexture(LocalConfig.Attributes.Shirt);
+            int n = m_contentHelper.GetNumberOfTexture(LocalConfig.Attribute.Shirt);
             if (index < 0) {
                 index = n - 1;
             } else if (index >= n) {
@@ -442,7 +433,7 @@ namespace Kisekae.Framework {
         /// <param name="noPatch">Whether to skip patching the farmer textures.</param>
         /// <param name="which">Which configure to change.</param>
         public void ChangeShoeColor(int index, bool noPatch = false, int which = 0) {
-            int n = m_contentHelper.GetNumberOfTexture(LocalConfig.Attributes.ShoeColor);
+            int n = m_contentHelper.GetNumberOfTexture(LocalConfig.Attribute.ShoeColor);
             if (index < -1) {
                 index = n;
             } else if (index > n) {
@@ -532,7 +523,7 @@ namespace Kisekae.Framework {
                 color.B = (byte)Game1.random.Next(15, 50);
             ChangeBottomsColor(color);
 
-            // randomise eye color
+            // randomize eye color
             Color c2 = new Color(Game1.random.Next(25, 254), Game1.random.Next(25, 254), Game1.random.Next(25, 254));
             c2.R /= 2;
             c2.G /= 2;

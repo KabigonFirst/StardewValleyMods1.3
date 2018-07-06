@@ -78,7 +78,6 @@ namespace Kisekae.Framework {
             this.m_farmers.Clear();
             this.m_farmerConfigs.Clear();
             if (!string.IsNullOrEmpty(LocalConfig.s_perSaveConfigPath)) {
-                m_env.Monitor.Log("remove Event_UpdateTick");
                 GameEvents.UpdateTick -= Event_PatchLoadMenu;
             }
         }
@@ -187,7 +186,7 @@ namespace Kisekae.Framework {
                 LocalConfig farmerConfig = m_env.Helper.ReadJsonFile<LocalConfig>(localConfigPath);
                 if (farmerConfig == null) {
                     farmerConfig = new LocalConfig();
-                    m_env.Monitor.Log("create new save:"+ localConfigPath);
+                    m_env.Monitor.Log("create new save:"+ localConfigPath, LogLevel.Info);
                     m_env.Helper.WriteJsonFile(localConfigPath, farmerConfig);
                 }
                 farmerConfig.SaveName = new DirectoryInfo(saveDir).Name;
