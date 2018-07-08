@@ -10,6 +10,6 @@
   "MinimumApiVersion": "2.0",
   "Description": "Modified version (works with SDV 1.3) of GetDressed which that lets you edit your character's appearance.",
   "UniqueID": "Kabigon.kisekae",
-  "EntryDll": "kisekae.dll",
+  "EntryDll": "Kisekae.dll",
   "UpdateKeys": ["Nexus:2348"]
 }
