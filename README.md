@@ -1,4 +1,4 @@
-No longer maintained. Works for SDV upto 1.3
+# No longer maintained. Works for SDV upto 1.3
 # My Mods for Stardew Valley
 * **Mining Assist Mod**
   _A mod that is useful for mining. You can setup shortcut key bindings to use tools/weapons/item or craft items quickly._
